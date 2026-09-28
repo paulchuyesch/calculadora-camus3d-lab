@@ -1,0 +1,3350 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CAMUS 3D LAB — Calculadora de Cotización y Rentabilidad</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
+
+  <style>
+    /* ==========================================================================
+       CALCULADORA DE COTIZACIÓN & RENTABILIDAD — CAMUS 3D LAB
+       Tarifa por gramo y gramos de la pieza editables en vivo (10g - 1000g).
+       ========================================================================== */
+
+    :root {
+      --bg: #070D18;
+      --panel-bg: rgba(13, 22, 38, 0.85);
+      --card-inner: rgba(19, 32, 54, 0.7);
+      --border: rgba(255, 255, 255, 0.1);
+      --border-focus: rgba(96, 165, 250, 0.6);
+
+      --blue-400: #60A5FA;
+      --blue-500: #2563EB;
+      --blue-glow: rgba(37, 99, 235, 0.3);
+
+      --emerald-400: #34D399;
+      --emerald-500: #10B981;
+      --emerald-glow: rgba(16, 185, 129, 0.25);
+
+      --crimson-400: #F87171;
+      --crimson-500: #EF4444;
+      --crimson-glow: rgba(239, 68, 68, 0.25);
+
+      --text-main: #FFFFFF;
+      --text-muted: #94A3B8;
+
+      --font-sans: 'Plus Jakarta Sans', -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --ease: cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    html {
+      overflow-x: hidden;
+      width: 100%;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 24px 32px;
+      gap: 20px;
+      max-width: 1440px;
+      margin: 0 auto;
+      width: 100%;
+      overflow-x: hidden;
+    }
+
+    /* TOP HEADER */
+    .top-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(96, 165, 250, 0.45);
+      box-shadow: 0 0 16px rgba(96, 165, 250, 0.25);
+      flex-shrink: 0;
+      transition: all 0.3s var(--ease);
+    }
+
+    .brand-avatar:hover {
+      transform: scale(1.06);
+      border-color: var(--blue-400);
+      box-shadow: 0 0 22px var(--blue-glow);
+    }
+
+    .brand-title {
+      font-size: 20px;
+      font-weight: 900;
+      letter-spacing: 0.12em;
+      color: #FFFFFF;
+    }
+
+    .brand-sub {
+      font-size: 13px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .header-pills {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .header-pill {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      color: var(--blue-400);
+    }
+
+    .header-pill.emerald {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.25);
+      color: var(--emerald-400);
+    }
+
+    /* MAIN CALCULATOR GRID */
+    .calc-container {
+      display: grid;
+      grid-template-columns: 1.12fr 1.18fr;
+      gap: 24px;
+      flex: 1;
+    }
+
+    /* LEFT PANEL: CONTROLS */
+    .calc-panel {
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 20px 50px -15px rgba(0,0,0,0.6);
+    }
+
+    .panel-title {
+      font-size: 16px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.01em;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2px;
+    }
+
+    /* CONTROL CARDS WITH TOGGLES */
+    .control-card {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      transition: all 0.25s var(--ease);
+    }
+
+    .control-card.active-comp {
+      border-color: rgba(96, 165, 250, 0.4);
+      background: rgba(19, 32, 54, 0.85);
+    }
+
+    .control-card.inactive-comp {
+      opacity: 0.55;
+      border-color: rgba(255, 255, 255, 0.06);
+      background: rgba(13, 22, 38, 0.4);
+    }
+
+    .control-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .toggle-head-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      cursor: pointer;
+      user-select: none;
+      flex: 1;
+    }
+
+    .control-title-static {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .control-title-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 6px;
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .control-desc {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 3px;
+    }
+
+    /* INPUTS EDITABLES */
+    .rate-input-box {
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--blue-400);
+      background: rgba(96, 165, 250, 0.12);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      border-radius: 6px;
+      padding: 3px 8px;
+      width: 66px;
+      text-align: center;
+      outline: none;
+      transition: all 0.2s;
+      -moz-appearance: textfield;
+      appearance: textfield;
+    }
+
+    .rate-input-box:focus {
+      background: rgba(96, 165, 250, 0.22);
+      border-color: var(--blue-400);
+      color: #FFFFFF;
+      box-shadow: 0 0 10px var(--blue-glow);
+    }
+
+    /* Ocultar flechas del navegador en todos los inputs numéricos */
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button,
+    .rate-input-box::-webkit-inner-spin-button,
+    .rate-input-box::-webkit-outer-spin-button,
+    .grams-input-box::-webkit-inner-spin-button,
+    .grams-input-box::-webkit-outer-spin-button,
+    .hours-input-box::-webkit-inner-spin-button,
+    .hours-input-box::-webkit-outer-spin-button,
+    .base-input-box::-webkit-inner-spin-button,
+    .base-input-box::-webkit-outer-spin-button,
+    .opt-price-input::-webkit-inner-spin-button,
+    .opt-price-input::-webkit-outer-spin-button,
+    .qty-input::-webkit-inner-spin-button,
+    .qty-input::-webkit-outer-spin-button,
+    .modal-input-field::-webkit-inner-spin-button,
+    .modal-input-field::-webkit-outer-spin-button,
+    .filament-input-box::-webkit-inner-spin-button,
+    .filament-input-box::-webkit-outer-spin-button {
+      -webkit-appearance: none !important;
+      margin: 0 !important;
+      display: none !important;
+    }
+
+    input[type=number] {
+      -moz-appearance: textfield !important;
+      appearance: textfield !important;
+    }
+
+    /* CAJA EDITABLE DE VALORES (BASE / GRAMOS / HORAS) */
+    .control-val-box-container {
+      display: flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      padding: 3px 9px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      cursor: text;
+    }
+
+    .control-val-box-container:hover {
+      border-color: rgba(96, 165, 250, 0.45);
+    }
+
+    .control-val-box-container:focus-within {
+      border-color: var(--blue-400);
+      box-shadow: 0 0 10px var(--blue-glow);
+      background: rgba(96, 165, 250, 0.2);
+    }
+
+    .control-val-box-container.emerald {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.3);
+    }
+
+    .control-val-box-container.emerald:hover {
+      border-color: rgba(16, 185, 129, 0.55);
+    }
+
+    .control-val-box-container.emerald:focus-within {
+      border-color: var(--emerald-400);
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.35);
+      background: rgba(16, 185, 129, 0.2);
+    }
+
+    .control-val-box-container.inactive {
+      background: rgba(255, 255, 255, 0.04) !important;
+      border-color: rgba(255, 255, 255, 0.1) !important;
+      opacity: 0.55;
+      cursor: not-allowed;
+      box-shadow: none !important;
+    }
+
+    .control-val-box-container.inactive .grams-unit,
+    .control-val-box-container.inactive .base-prefix,
+    .control-val-box-container.inactive .grams-input-box,
+    .control-val-box-container.inactive .hours-input-box,
+    .control-val-box-container.inactive .base-input-box {
+      color: var(--text-muted) !important;
+    }
+
+    .grams-input-box,
+    .hours-input-box,
+    .base-input-box {
+      width: 62px;
+      border: none !important;
+      background: transparent !important;
+      padding: 0 !important;
+      margin: 0 !important;
+      font-size: 14px !important;
+      font-weight: 800 !important;
+      color: var(--blue-400) !important;
+      font-family: var(--font-mono) !important;
+      text-align: right !important;
+      outline: none !important;
+      -moz-appearance: textfield !important;
+      appearance: textfield !important;
+    }
+
+    .base-input-box {
+      width: 48px;
+      color: var(--emerald-400) !important;
+    }
+
+    .control-val-box-container:focus-within .grams-input-box,
+    .control-val-box-container:focus-within .hours-input-box,
+    .control-val-box-container:focus-within .grams-unit,
+    .control-val-box-container.emerald:focus-within .base-input-box,
+    .control-val-box-container.emerald:focus-within .base-prefix {
+      color: #FFFFFF !important;
+    }
+
+    .grams-unit {
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--blue-400);
+      user-select: none;
+    }
+
+    .base-prefix {
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      font-weight: 800;
+      color: var(--emerald-400);
+      user-select: none;
+    }
+
+    .control-val-box {
+      font-family: var(--font-mono);
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--blue-400);
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      padding: 4px 10px;
+      border-radius: 6px;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+    .control-val-box.emerald {
+      color: var(--emerald-400);
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.25);
+    }
+
+    .control-val-box.inactive {
+      color: var(--text-muted);
+      background: rgba(255, 255, 255, 0.04);
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    input[type=range] {
+      width: 100%;
+      height: 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.12);
+      outline: none;
+      -webkit-appearance: none;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+
+    .control-card.inactive-comp input[type=range] {
+      pointer-events: none;
+      opacity: 0.2;
+      filter: grayscale(1);
+    }
+
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--blue-400);
+      border: 2px solid #FFFFFF;
+      box-shadow: 0 0 12px var(--blue-400);
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.18);
+    }
+
+    .control-scale {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    /* CHECKBOXES & OPTIONS */
+    .opt-checkbox {
+      width: 20px;
+      height: 20px;
+      border-radius: 5px;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .active-comp .opt-checkbox,
+    .opt-card.active .opt-checkbox {
+      background: var(--emerald-400);
+      border-color: var(--emerald-400);
+    }
+
+    .active-comp .opt-checkbox::after,
+    .opt-card.active .opt-checkbox::after {
+      content: '';
+      width: 5px;
+      height: 9px;
+      border: solid #000;
+      border-width: 0 2.2px 2.2px 0;
+      transform: rotate(45deg);
+      margin-bottom: 2px;
+    }
+
+    .extra-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 6px;
+    }
+
+    .opt-card {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 14px 12px;
+      min-height: 104px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.2s var(--ease);
+    }
+
+    .opt-card:hover {
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    .opt-card.active {
+      border-color: var(--emerald-400);
+      background: rgba(16, 185, 129, 0.08);
+      box-shadow: 0 0 20px rgba(16, 185, 129, 0.1);
+    }
+
+    .opt-card-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 6px;
+      width: 100%;
+    }
+
+    .opt-label {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+    }
+
+    .opt-sub {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.2;
+      margin-top: 4px;
+      margin-bottom: auto;
+    }
+
+    .opt-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      background: rgba(96, 165, 250, 0.08);
+      border: 1px solid rgba(96, 165, 250, 0.28);
+      border-radius: 6px;
+      padding: 3px 8px;
+      width: fit-content;
+      margin-top: 10px;
+      font-family: var(--font-mono);
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--blue-400);
+      transition: all 0.2s;
+    }
+
+    .opt-card.active .opt-pill {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: rgba(16, 185, 129, 0.4);
+      color: var(--emerald-400);
+    }
+
+    .opt-price-input {
+      width: 48px;
+      border: none;
+      background: transparent;
+      padding: 0;
+      font-size: 12px;
+      font-family: var(--font-mono);
+      font-weight: 800;
+      text-align: center;
+      color: inherit;
+      outline: none;
+      transition: all 0.2s;
+      -moz-appearance: textfield !important;
+      appearance: textfield !important;
+    }
+
+    .opt-price-input:focus {
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 3px;
+      color: #FFFFFF;
+    }
+
+    /* RIGHT PANEL: LIVE PRICING & PROFIT RESULTS */
+    .results-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    
+    /* SELECTOR DE CANTIDAD DE ARTÍCULOS */
+    .quantity-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      padding: 12px 18px;
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      transition: all 0.25s ease;
+    }
+
+    .quantity-card.active-batch {
+      border-color: rgba(96, 165, 250, 0.45);
+      background: linear-gradient(135deg, rgba(96, 165, 250, 0.08) 0%, rgba(13, 22, 38, 0.8) 100%);
+      box-shadow: 0 0 20px rgba(96, 165, 250, 0.15);
+    }
+
+    .quantity-info {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .quantity-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .quantity-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.01em;
+    }
+
+    .quantity-badge {
+      font-size: 11px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      padding: 2px 7px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    .quantity-card.active-batch .quantity-badge {
+      background: rgba(96, 165, 250, 0.2);
+      color: var(--blue-400);
+      border-color: rgba(96, 165, 250, 0.4);
+    }
+
+    .quantity-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+    }
+
+    .quantity-stepper {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-qty {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.07);
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      color: #FFFFFF;
+      font-size: 16px;
+      font-weight: 800;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      outline: none;
+    }
+
+    .btn-qty:hover {
+      background: rgba(96, 165, 250, 0.25);
+      border-color: var(--blue-400);
+      color: var(--blue-400);
+    }
+
+    .btn-qty:active {
+      transform: scale(0.95);
+    }
+
+    .qty-input {
+      width: 52px;
+      height: 32px;
+      background: rgba(96, 165, 250, 0.12);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      border-radius: 6px;
+      text-align: center;
+      color: #FFFFFF;
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 800;
+      outline: none;
+      transition: all 0.2s;
+      -webkit-appearance: none !important;
+      -moz-appearance: textfield !important;
+      appearance: none !important;
+    }
+
+    .qty-input::-webkit-inner-spin-button,
+    .qty-input::-webkit-outer-spin-button {
+      -webkit-appearance: none !important;
+      margin: 0 !important;
+      display: none !important;
+    }
+
+    .qty-input:focus {
+      border-color: var(--blue-400);
+      box-shadow: 0 0 10px var(--blue-glow);
+      background: rgba(96, 165, 250, 0.22);
+    }
+
+    
+    /* MODALIDAD DE CAJA: POR LOTE VS POR PIEZA */
+    .box-mode-toggle {
+      display: flex;
+      align-items: center;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 2px;
+      gap: 3px;
+      margin: 6px 0;
+    }
+
+    .btn-box-mode {
+      flex: 1;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: all 0.2s;
+      outline: none;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .btn-box-mode:hover {
+      color: #FFFFFF;
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .btn-box-mode.active {
+      background: rgba(16, 185, 129, 0.25);
+      color: var(--emerald-400);
+      font-weight: 800;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    /* PRECIO UNITARIO Y AHORRO EN HERO CARD */
+    .hero-unit-pricing-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .unit-price-box {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      padding: 4px 10px;
+    }
+
+    .unit-price-label {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .unit-price-val {
+      font-size: 14px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: #FFFFFF;
+    }
+
+    .savings-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(16, 185, 129, 0.15);
+      border: 1px solid rgba(16, 185, 129, 0.45);
+      border-radius: 6px;
+      padding: 4px 10px;
+    }
+
+    .savings-label {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--emerald-400);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+
+    .savings-val {
+      font-size: 14px;
+      font-weight: 900;
+      font-family: var(--font-mono);
+      color: #FFFFFF;
+      text-shadow: 0 0 8px var(--emerald-glow);
+    }
+
+    .batch-tag-pill {
+      font-size: 11px;
+      font-weight: 800;
+      background: rgba(96, 165, 250, 0.15);
+      color: var(--blue-400);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      padding: 2px 8px;
+      border-radius: 12px;
+      text-transform: none;
+      letter-spacing: normal;
+    }
+
+    /* PRIMARY HERO PRICE CARD */
+    .hero-price-card {
+      background: linear-gradient(135deg, rgba(16, 185, 129, 0.12) 0%, rgba(13, 22, 38, 0.95) 100%);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      border-radius: 18px;
+      padding: 24px 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      box-shadow: 0 0 45px var(--emerald-glow);
+    }
+
+    .hero-tag {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--emerald-400);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .hero-price-row {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 12px;
+    }
+
+    .hero-number {
+      font-size: 52px;
+      font-weight: 900;
+      font-family: var(--font-mono);
+      letter-spacing: -0.04em;
+      color: var(--emerald-400);
+    }
+
+    .hero-profit-badge {
+      text-align: right;
+    }
+
+    .hero-profit-val {
+      font-size: 20px;
+      font-weight: 800;
+      font-family: var(--font-mono);
+      color: #FFFFFF;
+    }
+
+    .hero-profit-pct {
+      font-size: 13px;
+      color: var(--emerald-400);
+      font-weight: 700;
+    }
+
+    /* FORMULA BREAKDOWN */
+    .breakdown-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(105px, 1fr));
+      gap: 10px;
+    }
+
+    .breakdown-item {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 10px 14px;
+    }
+
+    .breakdown-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+    }
+
+    .breakdown-val {
+      font-family: var(--font-mono);
+      font-size: 15px;
+      font-weight: 800;
+      color: #FFFFFF;
+      margin-top: 4px;
+    }
+
+    /* COMPARATIVE METRICS GRID */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      flex: 1;
+    }
+
+    .compare-card {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .compare-card.danger {
+      border-color: rgba(239, 68, 68, 0.35);
+      background: linear-gradient(180deg, rgba(239, 68, 68, 0.06) 0%, rgba(13, 22, 38, 0.9) 100%);
+    }
+
+    .compare-card.info {
+      border-color: rgba(96, 165, 250, 0.35);
+      background: linear-gradient(180deg, rgba(37, 99, 235, 0.06) 0%, rgba(13, 22, 38, 0.9) 100%);
+    }
+
+    .comp-head {
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .comp-price {
+      font-size: 30px;
+      font-weight: 900;
+      font-family: var(--font-mono);
+      letter-spacing: -0.03em;
+    }
+
+    .comp-desc {
+      font-size: 12px;
+      line-height: 1.5;
+      color: var(--text-muted);
+    }
+
+    /* BOTTOM FARM STATS BAR */
+    .farm-bar {
+      background: var(--panel-bg);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+    }
+
+    .farm-stat {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .farm-stat-num {
+      font-family: var(--font-mono);
+      font-weight: 800;
+      color: var(--blue-400);
+      font-size: 15px;
+    }
+
+    /* BOTON CONFIGURAR COSTOS */
+    .btn-open-modal {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      color: var(--blue-400);
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 16px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: all 0.25s var(--ease);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+    }
+
+    .btn-open-modal:hover {
+      background: rgba(96, 165, 250, 0.2);
+      border-color: var(--blue-400);
+      color: #FFFFFF;
+      box-shadow: 0 0 20px var(--blue-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-open-modal:active {
+      transform: translateY(0);
+    }
+
+    .btn-open-modal svg {
+      flex-shrink: 0;
+      transition: transform 0.4s var(--ease);
+    }
+
+    .btn-open-modal:hover svg {
+      transform: rotate(45deg);
+    }
+
+    /* MODAL OVERLAY & CARD */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      background: rgba(4, 8, 16, 0.78);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.25s var(--ease);
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .modal-card {
+      background: linear-gradient(165deg, rgba(15, 25, 45, 0.98) 0%, rgba(9, 15, 28, 0.99) 100%);
+      border: 1px solid rgba(96, 165, 250, 0.35);
+      border-radius: 20px;
+      width: 100%;
+      max-width: 820px;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.85), 0 0 40px rgba(37, 99, 235, 0.2);
+      transform: scale(0.95) translateY(12px);
+      transition: transform 0.25s var(--ease);
+      overflow: hidden;
+    }
+
+    .modal-overlay.active .modal-card {
+      transform: scale(1) translateY(0);
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 22px 26px 18px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.25);
+    }
+
+    .modal-title {
+      font-size: 18px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.01em;
+    }
+
+    .modal-subtitle {
+      font-size: 12.5px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .modal-close {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .modal-close:hover {
+      background: rgba(239, 68, 68, 0.15);
+      border-color: rgba(239, 68, 68, 0.4);
+      color: var(--crimson-400);
+    }
+
+    .modal-body {
+      padding: 22px 26px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .modal-section {
+      background: var(--card-inner);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-section-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    .modal-section-title {
+      font-size: 14px;
+      font-weight: 800;
+      color: #FFFFFF;
+      letter-spacing: -0.01em;
+    }
+
+    .modal-section-desc {
+      font-size: 11.5px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    
+    .modal-body::-webkit-scrollbar {
+      width: 6px;
+    }
+    .modal-body::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .modal-body::-webkit-scrollbar-thumb {
+      background: rgba(96, 165, 250, 0.3);
+      border-radius: 3px;
+    }
+    .modal-body::-webkit-scrollbar-thumb:hover {
+      background: rgba(96, 165, 250, 0.5);
+    }
+
+    /* FILAMENT GRID IN MODAL */
+    .modal-filament-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+      gap: 10px;
+    }
+
+    .filament-choice-card {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      transition: all 0.2s;
+      cursor: pointer;
+    }
+
+    .filament-choice-card:hover {
+      border-color: rgba(96, 165, 250, 0.4);
+    }
+
+    .filament-choice-card.selected {
+      border-color: var(--blue-400);
+      background: rgba(37, 99, 235, 0.12);
+      box-shadow: 0 0 16px rgba(37, 99, 235, 0.2);
+    }
+
+    .filament-radio-row {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .filament-radio {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      flex-shrink: 0;
+    }
+
+    .filament-choice-card.selected .filament-radio {
+      border-color: var(--blue-400);
+      background: var(--blue-400);
+      box-shadow: 0 0 8px var(--blue-glow);
+    }
+
+    .filament-choice-card.selected .filament-radio::after {
+      content: '';
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #FFFFFF;
+    }
+
+    .filament-name {
+      font-size: 13px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .filament-price-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-top: 2px;
+      padding-top: 6px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .filament-input-label {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .filament-input-box {
+      font-family: var(--font-mono);
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--blue-400);
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.3);
+      border-radius: 6px;
+      padding: 3px 8px;
+      width: 72px;
+      text-align: right;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .filament-input-box:focus {
+      background: rgba(96, 165, 250, 0.2);
+      border-color: var(--blue-400);
+      color: #FFFFFF;
+    }
+
+    /* ELECTRICITY & MACHINE GRID */
+    .modal-two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .modal-input-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .modal-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: #FFFFFF;
+    }
+
+    .modal-sublabel {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .modal-select {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 600;
+      padding: 9px 12px;
+      outline: none;
+      cursor: pointer;
+      transition: border-color 0.2s;
+    }
+
+    .modal-select:focus {
+      border-color: var(--blue-400);
+      box-shadow: 0 0 10px var(--blue-glow);
+    }
+
+    .modal-select option {
+      background: #0B132B;
+      color: #FFFFFF;
+    }
+
+    .modal-input-field-wrap {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 7px 12px;
+      transition: border-color 0.2s;
+    }
+
+    .modal-input-field-wrap:focus-within {
+      border-color: var(--blue-400);
+      box-shadow: 0 0 10px var(--blue-glow);
+    }
+
+    .modal-input-field-wrap.emerald:focus-within {
+      border-color: var(--emerald-400);
+      box-shadow: 0 0 10px var(--emerald-glow);
+    }
+
+    .modal-input-prefix {
+      font-family: var(--font-mono);
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+    }
+
+    .modal-input-field {
+      flex: 1;
+      background: transparent;
+      border: none;
+      outline: none;
+      font-family: var(--font-mono);
+      font-size: 13.5px;
+      font-weight: 800;
+      color: #FFFFFF;
+      text-align: right;
+    }
+
+    .modal-metric-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(96, 165, 250, 0.1);
+      border: 1px solid rgba(96, 165, 250, 0.25);
+      border-radius: 6px;
+      padding: 5px 12px;
+      font-family: var(--font-mono);
+      font-size: 12.5px;
+      font-weight: 700;
+      color: var(--blue-400);
+      width: fit-content;
+      margin-top: 4px;
+    }
+
+    .modal-metric-badge.emerald {
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.3);
+      color: var(--emerald-400);
+    }
+
+    /* MODAL FOOTER */
+    .modal-foot {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 26px;
+      border-top: 1px solid var(--border);
+      background: rgba(0, 0, 0, 0.3);
+    }
+
+    .btn-modal-reset {
+      background: transparent;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-modal-reset:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: #FFFFFF;
+      border-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .modal-foot-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .btn-modal-cancel {
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--border);
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 700;
+      padding: 9px 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-modal-cancel:hover {
+      background: rgba(255, 255, 255, 0.12);
+    }
+
+    .btn-modal-save {
+      background: var(--blue-500);
+      border: 1px solid var(--blue-400);
+      color: #FFFFFF;
+      font-family: var(--font-sans);
+      font-size: 13px;
+      font-weight: 800;
+      padding: 9px 20px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 0 16px var(--blue-glow);
+    }
+
+    .btn-modal-save:hover {
+      background: #1d4ed8;
+      box-shadow: 0 0 25px var(--blue-glow);
+      transform: translateY(-1px);
+    }
+
+    .btn-edit-costs-inline {
+      background: rgba(96, 165, 250, 0.12);
+      border: 1px solid rgba(96, 165, 250, 0.3);
+      color: var(--blue-400);
+      font-size: 11px;
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-edit-costs-inline:hover {
+      background: rgba(96, 165, 250, 0.25);
+      color: #FFFFFF;
+    }
+
+    .cost-desc-list {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      font-size: 12px;
+      line-height: 1.45;
+      color: var(--text-muted);
+    }
+
+    /* ==========================================================================
+       SISTEMA RESPONSIVE MULTIPANTALLA (Móviles, Tablets, Laptops y 4K)
+       ========================================================================== */
+
+    /* Pantallas Grandes / Laptops Medianas (hasta 1180px) */
+    @media (max-width: 1180px) {
+      body {
+        padding: 20px 24px;
+        gap: 18px;
+      }
+      .calc-container {
+        gap: 18px;
+      }
+      .hero-price-card {
+        padding: 20px 22px;
+      }
+      .hero-number {
+        font-size: 46px;
+      }
+    }
+
+    /* Tablets y Pantallas Medianas (hasta 1024px): Colapso a 1 Columna */
+    @media (max-width: 1024px) {
+      .calc-container {
+        grid-template-columns: 1fr;
+        gap: 20px;
+      }
+      .calc-panel {
+        padding: 22px;
+      }
+      .results-panel {
+        gap: 18px;
+      }
+      .hero-price-card {
+        padding: 22px 24px;
+      }
+      .compare-grid {
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+    }
+
+    /* Tablets Verticales y Móviles Grandes (hasta 768px) */
+    @media (max-width: 768px) {
+      body {
+        padding: 16px;
+        gap: 14px;
+      }
+      .top-header {
+        padding-bottom: 14px;
+      }
+      .calc-panel {
+        padding: 18px 16px;
+        border-radius: 16px;
+      }
+      .hero-price-card {
+        padding: 18px 16px;
+        border-radius: 16px;
+      }
+      .hero-number {
+        font-size: 40px;
+      }
+      .compare-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+      }
+      .extra-options {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 8px;
+      }
+      .opt-card {
+        padding: 10px 8px;
+        min-height: 100px;
+      }
+      .opt-label {
+        font-size: 11.5px;
+      }
+      .opt-sub {
+        font-size: 10px;
+      }
+      .btn-box-mode {
+        font-size: 9px;
+        padding: 2px 3px;
+      }
+      .modal-card {
+        width: 95vw;
+        max-height: 92vh;
+        border-radius: 16px;
+      }
+      .modal-two-col {
+        grid-template-columns: 1fr;
+        gap: 12px;
+      }
+    }
+
+    /* Móviles Estándar y Pequeños (hasta 600px) */
+    @media (max-width: 600px) {
+      body {
+        padding: 12px 10px;
+        gap: 12px;
+      }
+      .top-header {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding-bottom: 12px;
+      }
+      .brand {
+        width: 100%;
+      }
+      .brand-avatar {
+        width: 40px;
+        height: 40px;
+      }
+      .brand-title {
+        font-size: 17px;
+      }
+      .brand-sub {
+        font-size: 11.5px;
+      }
+      .btn-open-modal {
+        width: 100%;
+        justify-content: center;
+        padding: 10px 14px;
+      }
+      .calc-panel {
+        padding: 14px 12px;
+        border-radius: 14px;
+        gap: 12px;
+      }
+      .panel-title {
+        font-size: 14px;
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 2px;
+      }
+      .panel-title span:last-child {
+        font-size: 11px;
+        font-weight: 500;
+      }
+      .quantity-card {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px;
+      }
+      .quantity-stepper {
+        justify-content: flex-start;
+        align-self: flex-start;
+      }
+      .control-card {
+        padding: 12px 10px;
+        border-radius: 12px;
+        gap: 10px;
+      }
+      .control-head {
+        flex-wrap: wrap;
+        gap: 8px;
+      }
+      .toggle-head-left {
+        min-width: 0;
+        gap: 8px;
+        flex: 1;
+      }
+      .control-title-row {
+        font-size: 12px;
+        gap: 4px;
+        line-height: 1.3;
+      }
+      .control-desc {
+        font-size: 10px;
+      }
+      .rate-input-box {
+        font-size: 12px;
+        width: 56px;
+        padding: 2px 4px;
+      }
+      .control-val-box-container {
+        padding: 2px 6px;
+      }
+      .grams-input-box,
+      .hours-input-box,
+      .base-input-box {
+        font-size: 13px !important;
+      }
+      .control-scale {
+        font-size: 10px;
+      }
+      .control-scale span:nth-child(2) {
+        display: none;
+      }
+      .extra-options {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .opt-card {
+        min-height: auto;
+        padding: 12px 14px;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .opt-card-head {
+        align-items: center;
+      }
+      .opt-label {
+        font-size: 13px;
+      }
+      .opt-sub {
+        font-size: 11px;
+        margin-top: 0;
+      }
+      .box-mode-toggle {
+        margin: 4px 0 6px;
+      }
+      .btn-box-mode {
+        font-size: 10.5px;
+        padding: 4px 8px;
+      }
+      .opt-pill {
+        align-self: flex-start;
+      }
+      .hero-price-card {
+        padding: 16px 14px;
+        border-radius: 14px;
+        gap: 12px;
+      }
+      .hero-price-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+      .hero-number {
+        font-size: 38px;
+      }
+      .hero-profit-badge {
+        text-align: left;
+        width: 100%;
+        border-top: 1px solid rgba(255, 255, 255, 0.08);
+        padding-top: 10px;
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .hero-unit-pricing-row {
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+      .unit-price-box {
+        padding: 3px 8px;
+      }
+      .unit-price-label {
+        font-size: 10px;
+      }
+      .unit-price-val {
+        font-size: 13px;
+      }
+      .savings-badge {
+        padding: 3px 8px;
+      }
+      .savings-label {
+        font-size: 10px;
+      }
+      .savings-val {
+        font-size: 13px;
+      }
+      .breakdown-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 6px;
+      }
+      .breakdown-item {
+        padding: 8px 10px;
+      }
+      .breakdown-label {
+        font-size: 9.5px;
+      }
+      .breakdown-val {
+        font-size: 13px;
+      }
+      .compare-card {
+        padding: 14px 12px;
+        border-radius: 14px;
+      }
+      .modal-card {
+        width: 96vw;
+        max-height: 94vh;
+        border-radius: 14px;
+      }
+      .modal-head {
+        padding: 14px 14px;
+      }
+      .modal-title {
+        font-size: 16px;
+      }
+      .modal-subtitle {
+        font-size: 11.5px;
+      }
+      .modal-body {
+        padding: 14px 12px;
+        gap: 12px;
+      }
+      .modal-section {
+        padding: 12px 10px;
+      }
+      .modal-filament-grid {
+        grid-template-columns: 1fr;
+      }
+      .modal-foot {
+        padding: 12px 14px;
+        flex-direction: column-reverse;
+        gap: 8px;
+      }
+      .modal-foot-actions {
+        width: 100%;
+        display: flex;
+        gap: 8px;
+      }
+      .btn-modal-cancel,
+      .btn-modal-save {
+        flex: 1;
+        text-align: center;
+        justify-content: center;
+        padding: 10px 14px;
+      }
+      .btn-modal-reset {
+        width: 100%;
+        text-align: center;
+        padding: 9px 14px;
+      }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="top-header">
+    <div class="brand">
+      <img src="https://www.supportbrigades.com/wp-content/uploads/2026/09/730315832_17886716682586799_8317872950478338884_n.jpg" onerror="this.onerror=null; this.src='./730315832_17886716682586799_8317872950478338884_n..jpg';" alt="Mascota CAMUS 3D" class="brand-avatar">
+      <div>
+        <div class="brand-title">CAMUS 3D LAB</div>
+        <div class="brand-sub">Calculadora de Precios & Rentabilidad</div>
+      </div>
+    </div>
+
+    <button type="button" class="btn-open-modal" onclick="openCostModal()" title="Configurar estructura de costos base">
+      <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82 1.65 1.65 0 0 0-1.51 1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+      </svg>
+      <span>Costos Base & Insumos</span>
+    </button>
+  </header>
+
+  <!-- CALCULATOR MAIN -->
+  <main class="calc-container">
+
+    <!-- PANEL IZQUIERDO: CONFIGURACIÓN Y PARÁMETROS INTERACTIVOS -->
+    <section class="calc-panel">
+      <div class="panel-title">
+        <span>Parámetros de la Pieza</span>
+        <span style="font-size:12px; font-weight:600; color:var(--text-muted);">Edita el precio o los gramos, o mueve la barra</span>
+      </div>
+
+      <!-- SELECTOR DE CANTIDAD DE ARTÍCULOS A COTIZAR -->
+      <div class="quantity-card" id="card-quantity">
+        <div class="quantity-info">
+          <div class="quantity-title-row">
+            <span class="quantity-title">Cantidad de Artículos a Cotizar</span>
+            <span class="quantity-badge" id="badge-qty-indicator">1 pieza</span>
+          </div>
+          <div class="quantity-desc">Calcula piezas iguales optimizando costos fijos de preparación</div>
+        </div>
+        <div class="quantity-stepper">
+          <button type="button" class="btn-qty" onclick="changeQuantity(-1)" title="Disminuir cantidad">-</button>
+          <input type="number" id="input-quantity" class="qty-input" value="1" min="1" step="1" oninput="onQuantityInput(this.value)" onblur="onQuantityBlur(this)">
+          <button type="button" class="btn-qty" onclick="changeQuantity(1)" title="Aumentar cantidad">+</button>
+        </div>
+      </div>
+
+      <!-- COMPONENTE 1: COSTO FIJO BASE (SETUP / STL) - EDITABLE -->
+      <div class="control-card active-comp" id="card-base">
+        <div class="control-head">
+          <div class="toggle-head-left" onclick="toggleComponent('base')">
+            <div class="opt-checkbox" id="chk-base"></div>
+            <div>
+              <div class="control-title-static">Costo Fijo Base (Setup / STL)</div>
+              <div class="control-desc">Revisión técnica de malla, espesores y preparación</div>
+            </div>
+          </div>
+          <label for="input-base-val" class="control-val-box-container emerald" id="box-base-container" onclick="event.stopPropagation()">
+            <span class="base-prefix">+S/</span>
+            <input type="number" id="input-base-val" class="base-input-box" step="0.50" min="0.00" value="5.00" oninput="calculate()" onblur="onBaseBlur(this)">
+          </label>
+        </div>
+      </div>
+
+      <!-- COMPONENTE 2: PESO DEL FILAMENTO (10g - 1000g, EDITABLE) -->
+      <div class="control-card active-comp" id="card-grams">
+        <div class="control-head">
+          <div class="toggle-head-left" onclick="toggleComponent('grams')">
+            <div class="opt-checkbox" id="chk-grams"></div>
+            <div>
+              <div class="control-title-row">
+                <span>Cobro por Peso (S/</span>
+                <input type="number" id="input-rate-grams" class="rate-input-box" step="0.01" min="0.01" value="0.18" onclick="event.stopPropagation()" oninput="calculate()" onblur="onRateBlur(this)">
+                <span>/ gramo)</span>
+              </div>
+              <div class="control-desc"><span id="txt-card-fil-name">PLA+ Grado Arquitectura</span> (Filamento consumido)</div>
+            </div>
+          </div>
+          <label for="input-grams-val" class="control-val-box-container" id="box-grams-container" onclick="event.stopPropagation()">
+            <input type="number" id="input-grams-val" class="grams-input-box" min="1" step="5" value="100" oninput="onGramsInput(this.value)" onblur="onGramsBlur(this)">
+            <span class="grams-unit">g</span>
+          </label>
+        </div>
+        <input type="range" id="input-grams" min="10" max="1000" step="5" value="100" oninput="onGramsSlider(this.value)">
+        <div class="control-scale">
+          <span>10g (Detalle ligero)</span>
+          <span>500g (Conjunto medio)</span>
+          <span>1,000g (1 kg Bobina completa)</span>
+        </div>
+      </div>
+
+      <!-- COMPONENTE 3: TIEMPO DE IMPRESIÓN (1.0h - 72.0h, EDITABLE) -->
+      <div class="control-card active-comp" id="card-hours">
+        <div class="control-head">
+          <div class="toggle-head-left" onclick="toggleComponent('hours')">
+            <div class="opt-checkbox" id="chk-hours"></div>
+            <div>
+              <div class="control-title-row">
+                <span>Cobro por Tiempo (S/</span>
+                <input type="number" id="input-rate-hours" class="rate-input-box" step="0.25" min="0.10" value="2.00" onclick="event.stopPropagation()" oninput="calculate()" onblur="onRateHoursBlur(this)">
+                <span>/ hora)</span>
+              </div>
+              <div class="control-desc"><span id="txt-card-printer-name">Creality K1C CoreXY</span> (Horas de máquina)</div>
+            </div>
+          </div>
+          <label for="input-hours-val" class="control-val-box-container" id="box-hours-container" onclick="event.stopPropagation()">
+            <input type="number" id="input-hours-val" class="hours-input-box" min="0.1" step="0.5" value="2.5" oninput="onHoursInput(this.value)" onblur="onHoursBlur(this)">
+            <span class="grams-unit">h</span>
+          </label>
+        </div>
+        <input type="range" id="input-hours" min="1.0" max="72.0" step="0.5" value="2.5" oninput="onHoursSlider(this.value)">
+        <div class="control-scale">
+          <span>1.0h (Detalle rápido)</span>
+          <span>36.0h (Conjunto arquitectónico)</span>
+          <span>72.0h (Topografía / Máxima)</span>
+        </div>
+      </div>
+
+      <!-- OPCIONES ADICIONALES -->
+      <div class="extra-options">
+        <div class="opt-card" id="opt-delivery" onclick="toggleOption('delivery')">
+          <div class="opt-card-head">
+            <div class="opt-label">Despacho Campus</div>
+            <div class="opt-checkbox"></div>
+          </div>
+          <div class="opt-sub">Express puerta</div>
+          <div class="opt-pill" onclick="event.stopPropagation()">
+            <span>+S/</span>
+            <input type="number" id="input-delivery-fee" class="opt-price-input" value="8.00" min="0.00" step="1.00" oninput="calculate()" onblur="onDeliveryBlur(this)">
+          </div>
+        </div>
+
+        <div class="opt-card active" id="opt-box" onclick="toggleOption('box')">
+          <div class="opt-card-head">
+            <div class="opt-label">Caja Anticolapso</div>
+            <div class="opt-checkbox"></div>
+          </div>
+          <div class="opt-sub" id="opt-box-sub">Empaque rígido</div>
+
+          <!-- SELECTOR DE MODALIDAD DE EMPAQUE (VISIBLE CUANDO CANTIDAD > 1) -->
+          <div class="box-mode-toggle" id="box-mode-container" onclick="event.stopPropagation()" style="display:none;">
+            <button type="button" class="btn-box-mode active" id="btn-box-mode-batch" onclick="setBoxMode('batch')" title="1 caja de empaque para todo el lote">1 por Lote</button>
+            <button type="button" class="btn-box-mode" id="btn-box-mode-unit" onclick="setBoxMode('unit')" title="1 caja individual para cada pieza">1 por Pieza</button>
+          </div>
+
+          <div class="opt-pill" onclick="event.stopPropagation()">
+            <span>+S/</span>
+            <input type="number" id="input-box-fee" class="opt-price-input" value="3.00" min="0.00" step="0.50" oninput="onBoxInput(this)" onblur="onBoxBlur(this)">
+          </div>
+        </div>
+
+        <div class="opt-card" id="opt-night" onclick="toggleOption('night')">
+          <div class="opt-card-head">
+            <div class="opt-label">Turno Madrugada</div>
+            <div class="opt-checkbox"></div>
+          </div>
+          <div class="opt-sub">Tarifa nocturna</div>
+          <div class="opt-pill" onclick="event.stopPropagation()">
+            <span>+</span>
+            <input type="number" id="input-night-pct" class="opt-price-input" value="7" min="1" max="100" style="width:26px;" oninput="calculate()" onblur="onNightBlur(this)">
+            <span>%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PANEL DERECHO: RESULTADOS Y RENTABILIDAD -->
+    <section class="results-panel">
+
+      <!-- TARJETA HERO: PRECIO AL CLIENTE & MARGEN -->
+      <div class="hero-price-card">
+        <div class="hero-tag">
+          <span>Cotización Sugerida</span>
+          <span id="badge-batch-tag" class="batch-tag-pill" style="display:none;">Lote de 1 unidad</span>
+        </div>
+
+        <div class="hero-price-row">
+          <div>
+            <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;" id="lbl-total-title">Total del Pedido</div>
+            <div class="hero-number" id="res-total">S/ 31.00</div>
+            
+            <div class="hero-unit-pricing-row">
+              <div class="unit-price-box">
+                <span class="unit-price-label">Precio Unitario Sugerido:</span>
+                <strong class="unit-price-val" id="res-unit-price">S/ 31.00 c/u</strong>
+              </div>
+              <div class="savings-badge" id="wrap-savings">
+                <span class="savings-label">Ahorro:</span>
+                <strong class="savings-val" id="res-savings">S/ 0.00</strong>
+              </div>
+            </div>
+          </div>
+
+          <div class="hero-profit-badge">
+            <div style="font-size:12px; color:var(--text-muted); text-transform:uppercase; font-weight:700;" id="lbl-profit-title">Utilidad Neta de la Pieza</div>
+            <div class="hero-profit-val" id="res-profit">S/ 21.90</div>
+            <div class="hero-profit-pct" id="res-margin">Margen Neto: 71%</div>
+            <div id="res-unit-profit" style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono); margin-top:4px; display:none;">(S/ 21.90 / unidad)</div>
+          </div>
+        </div>
+
+        <!-- DESGLOSE EN VIVO -->
+        <div class="breakdown-grid">
+          <div class="breakdown-item">
+            <div class="breakdown-label">Base Setup / STL</div>
+            <div class="breakdown-val" id="res-base">S/ 5.00</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-label">Material (<span id="txt-calc-g">100g</span> x S/ <span id="txt-calc-rate-g">0.18</span>)</div>
+            <div class="breakdown-val" id="res-mat">S/ 18.00</div>
+          </div>
+          <div class="breakdown-item">
+            <div class="breakdown-label">Tiempo (<span id="txt-calc-h">2.5h</span> x S/ <span id="txt-calc-rate-h">2.00</span>)</div>
+            <div class="breakdown-val" id="res-time">S/ 5.00</div>
+          </div>
+          <div class="breakdown-item" id="item-box-breakdown" style="display:none;">
+            <div class="breakdown-label">Caja Anticolapso</div>
+            <div class="breakdown-val" id="res-box-val" style="color:var(--emerald-400);">+S/ 3.00</div>
+          </div>
+          <div class="breakdown-item" id="item-delivery-breakdown" style="display:none;">
+            <div class="breakdown-label">Despacho Campus</div>
+            <div class="breakdown-val" id="res-delivery-val" style="color:var(--emerald-400);">+S/ 8.00</div>
+          </div>
+          <div class="breakdown-item" id="item-night-breakdown" style="display:none;">
+            <div class="breakdown-label">Madrugada (+<span id="txt-calc-night-pct">7</span>%)</div>
+            <div class="breakdown-val" id="res-night" style="color:var(--emerald-400);">+S/ 0.00</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- COMPARATIVO: TARIFA PLANA INFORMAL VS MODELO CAMUS -->
+      <div class="compare-grid">
+        <div class="compare-card danger" id="card-compare-flat">
+          <div>
+            <div class="comp-head" style="color:var(--crimson-400);">Cobro Antiguo (S/ 5.00/h)</div>
+            <div class="comp-price" style="color:var(--crimson-400); margin:8px 0;" id="flat-price">S/ 12.50</div>
+            <div class="comp-desc" id="flat-diag">
+              Costo directo real: S/ 7.15.<br>
+              Margen roto. Si la pieza es pesada, el taller casero pierde dinero y por eso cancela a mitad de madrugada.
+            </div>
+          </div>
+          <div id="flat-badge" style="font-size:11px; font-weight:700; color:var(--crimson-400); border-top:1px solid rgba(239,68,68,0.2); padding-top:8px;">
+            Modelo inviable
+          </div>
+        </div>
+
+        <div class="compare-card info">
+          <div>
+            <div class="comp-head" style="color:var(--blue-400); display:flex; justify-content:space-between; align-items:center;">
+              <span>Estructura de Costo Directo</span>
+              <button type="button" class="btn-edit-costs-inline" onclick="openCostModal()" title="Configurar parámetros de costo">Ajustar Costos</button>
+            </div>
+            <div class="comp-price" style="color:#FFFFFF; margin:8px 0;" id="cost-direct">S/ 8.35</div>
+            <div class="cost-desc-list">
+              <div>Filamento <span id="txt-cost-fil-name">PLA+</span> (<span id="txt-cost-fil-rate">S/ 0.058/g</span>): <strong id="cost-fil" style="color:#FFF;">S/ 5.80</strong></div>
+              <div>Electricidad <span id="txt-cost-printer-name">K1C</span> (<span id="txt-cost-elec-rate">S/ 0.15/h</span>): <strong id="cost-elec" style="color:#FFF;">S/ 0.38</strong></div>
+              <div>Desgaste Máquina (<span id="txt-cost-depr-rate">S/ 0.69/h</span>): <strong id="cost-depr" style="color:#FFF;">S/ 1.71</strong></div>
+              <div>Insumos Taller (<span id="txt-cost-supplies-rate">S/ 0.25/h</span>): <strong id="cost-supplies" style="color:#FFF;">S/ 0.63</strong></div>
+              <div>Caja Anticolapso: <strong id="cost-box" style="color:#FFF;">S/ 3.00</strong></div>
+              <div>Despacho Courier: <strong id="cost-delivery" style="color:#FFF;">S/ 0.00 (No incluido)</strong></div>
+            </div>
+          </div>
+          <div style="font-size:11px; font-weight:700; color:var(--blue-400); border-top:1px solid rgba(96,165,250,0.2); padding-top:8px;">
+            Costos base ajustables en tiempo real
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- MODAL DE CONFIGURACIÓN DE COSTOS BASE -->
+  <div class="modal-overlay" id="modal-costos" onclick="onModalOverlayClick(event)">
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      
+      <!-- MODAL HEADER -->
+      <div class="modal-head">
+        <div>
+          <div class="modal-title" id="modal-title">Parámetros de Costo & Estructura Base</div>
+          <div class="modal-subtitle">Modifica tarifas de mercado, consumo de electricidad, desgaste y otros insumos</div>
+        </div>
+        <button type="button" class="modal-close" onclick="closeCostModal()" aria-label="Cerrar modal">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      </div>
+
+      <!-- MODAL BODY -->
+      <div class="modal-body">
+        
+        <!-- SECCIÓN 1: FILAMENTOS EN EL MERCADO -->
+        <div class="modal-section">
+          <div class="modal-section-head">
+            <div>
+              <div class="modal-section-title">1. Precios de Filamentos en el Mercado (Bobina 1 kg)</div>
+              <div class="modal-section-desc">Haz clic en un material para seleccionarlo como activo y edita el precio de compra por kilogramo</div>
+            </div>
+          </div>
+
+          <div class="modal-filament-grid" id="modal-filament-list">
+            <!-- Renderizado dinámicamente -->
+          </div>
+        </div>
+
+        <!-- SECCIÓN 2: ELECTRICIDAD SEGÚN MODELO UTILIZADO -->
+        <div class="modal-section">
+          <div class="modal-section-head">
+            <div>
+              <div class="modal-section-title">2. Electricidad según Modelo de Impresora</div>
+              <div class="modal-section-desc">Selecciona la impresora en producción y ajusta la tarifa de electricidad por kWh</div>
+            </div>
+          </div>
+
+          <div class="modal-two-col">
+            <div class="modal-input-group">
+              <label class="modal-label" for="modal-printer-select">Modelo de Impresora Activa</label>
+              <select id="modal-printer-select" class="modal-select" onchange="onPrinterSelectChange(this.value)">
+                <option value="k1c">Creality K1C CoreXY (180W)</option>
+                <option value="p1s">Bambu Lab P1S / X1C (160W)</option>
+                <option value="a1">Bambu Lab A1 (110W)</option>
+                <option value="ender3">Creality Ender 3 V3 (130W)</option>
+                <option value="custom">Personalizado (Manual)</option>
+              </select>
+            </div>
+
+            <div class="modal-input-group">
+              <label class="modal-label" for="modal-input-watts">Potencia Media en Impresión (Watts)</label>
+              <div class="modal-input-field-wrap">
+                <input type="number" id="modal-input-watts" class="modal-input-field" value="180" min="20" step="5" oninput="updateModalPreview()">
+                <span class="modal-input-prefix">W</span>
+              </div>
+            </div>
+
+            <div class="modal-input-group">
+              <label class="modal-label" for="modal-input-elec-rate">Tarifa Eléctrica (S/ por kWh)</label>
+              <div class="modal-input-field-wrap">
+                <span class="modal-input-prefix">S/</span>
+                <input type="number" id="modal-input-elec-rate" class="modal-input-field" value="0.85" min="0.10" step="0.05" oninput="updateModalPreview()">
+                <span class="modal-input-prefix">/ kWh</span>
+              </div>
+            </div>
+
+            <div class="modal-input-group" style="justify-content:center;">
+              <span class="modal-sublabel">Costo Eléctrico Calculado:</span>
+              <div class="modal-metric-badge" id="preview-elec-cost">S/ 0.153 / hora</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 3: PRECIO DE LA IMPRESORA & DESGASTE (DEPRECIACIÓN) -->
+        <div class="modal-section">
+          <div class="modal-section-head">
+            <div>
+              <div class="modal-section-title">3. Precio de la Impresora & Cálculo de Desgaste</div>
+              <div class="modal-section-desc">Amortización técnica del equipo: Precio de compra dividido entre las horas de vida útil estimadas</div>
+            </div>
+          </div>
+
+          <div class="modal-two-col">
+            <div class="modal-input-group">
+              <label class="modal-label" for="modal-input-printer-price">Precio de Compra de la Impresora (S/)</label>
+              <div class="modal-input-field-wrap">
+                <span class="modal-input-prefix">S/</span>
+                <input type="number" id="modal-input-printer-price" class="modal-input-field" value="2400.00" min="100" step="50" oninput="updateModalPreview()">
+              </div>
+            </div>
+
+            <div class="modal-input-group">
+              <label class="modal-label" for="modal-input-printer-lifespan">Vida Útil Estimada (Horas de trabajo)</label>
+              <div class="modal-input-field-wrap">
+                <input type="number" id="modal-input-printer-lifespan" class="modal-input-field" value="3500" min="100" step="100" oninput="updateModalPreview()">
+                <span class="modal-input-prefix">horas</span>
+              </div>
+            </div>
+
+            <div class="modal-input-group" style="grid-column: 1 / -1;">
+              <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:10px;">
+                <span class="modal-sublabel">Desgaste / Depreciación por Hora:</span>
+                <div class="modal-metric-badge" id="preview-depr-cost">S/ 0.686 / hora</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- SECCIÓN 4: PRECIO DE LA CAJA Y OTROS INSUMOS -->
+        <div class="modal-section">
+          <div class="modal-section-head">
+            <div>
+              <div class="modal-section-title">4. Empaque & Otros Insumos de Producción</div>
+              <div class="modal-section-desc">Costo real de caja de empaque y consumibles de taller (adhesivo PEI, alcohol isopropílico, boquillas)</div>
+            </div>
+          </div>
+
+          <div class="modal-two-col">
+            <div class="modal-input-group">
+              <label class="modal-label" for="modal-input-box-cost">Precio Real de la Caja Anticolapso (S/)</label>
+              <div class="modal-input-field-wrap emerald">
+                <span class="modal-input-prefix">S/</span>
+                <input type="number" id="modal-input-box-cost" class="modal-input-field" value="3.00" min="0.00" step="0.10" oninput="updateModalPreview()">
+                <span class="modal-input-prefix">por caja</span>
+              </div>
+              <span class="modal-sublabel">Costo directo imputado cuando la caja está seleccionada</span>
+            </div>
+
+            <div class="modal-input-group">
+              <label class="modal-label" for="modal-input-other-supplies">Otros Insumos & Boquillas (S/ / hora)</label>
+              <div class="modal-input-field-wrap">
+                <span class="modal-input-prefix">S/</span>
+                <input type="number" id="modal-input-other-supplies" class="modal-input-field" value="0.25" min="0.00" step="0.05" oninput="updateModalPreview()">
+                <span class="modal-input-prefix">/ hora</span>
+              </div>
+              <span class="modal-sublabel">Alcohol isopropílico, laca/PEI, recambio de boquillas y mantenimiento</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- RESUMEN DE IMPACTO EN COSTOS -->
+        <div style="background: rgba(16, 185, 129, 0.08); border: 1px solid rgba(16, 185, 129, 0.3); border-radius: 12px; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+          <div>
+            <div style="font-size:12px; font-weight:700; color:var(--emerald-400);">Costo Hora-Máquina Total (Luz + Desgaste + Insumos):</div>
+            <div style="font-size:11px; color:var(--text-muted); margin-top:2px;">Suma de todos los costos de operación técnica por hora</div>
+          </div>
+          <div style="font-family:var(--font-mono); font-size:18px; font-weight:800; color:#FFFFFF;" id="preview-total-hour-cost">S/ 1.09 / h</div>
+        </div>
+
+      </div>
+
+      <!-- MODAL FOOTER -->
+      <div class="modal-foot">
+        <button type="button" class="btn-modal-reset" onclick="resetCostDefaults()">Restablecer Valores Predeterminados</button>
+        <div class="modal-foot-actions">
+          <button type="button" class="btn-modal-cancel" onclick="closeCostModal()">Cancelar</button>
+          <button type="button" class="btn-modal-save" onclick="saveAndApplyCosts()">Guardar y Aplicar</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+
+  <script>
+    const DEFAULT_CONFIG = {
+      base: true,
+      grams: true,
+      hours: true,
+      delivery: false,
+      box: true,
+      night: false
+    };
+
+    let config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+
+    // PARÁMETROS DE COSTO BASE (CONFIGURABLES VÍA MODAL)
+    const DEFAULT_COST_PARAMS = {
+      activeFilament: 'pla_plus',
+      filaments: {
+        pla_plus: { name: 'PLA+ Grado Arquitectura', priceKg: 58.00 },
+        petg: { name: 'PETG Técnico Resistente', priceKg: 68.00 },
+        abs: { name: 'ABS / ASA Pro Térmico', priceKg: 75.00 },
+        tpu: { name: 'TPU 95A Flexible', priceKg: 95.00 },
+        cf: { name: 'PLA Fibra de Carbono', priceKg: 115.00 }
+      },
+      activePrinter: 'k1c',
+      printers: {
+        k1c: { name: 'Creality K1C CoreXY', shortName: 'K1C', watts: 180 },
+        p1s: { name: 'Bambu Lab P1S / X1C', shortName: 'P1S', watts: 160 },
+        a1: { name: 'Bambu Lab A1', shortName: 'A1', watts: 110 },
+        ender3: { name: 'Creality Ender 3 V3', shortName: 'Ender 3', watts: 130 },
+        custom: { name: 'Modelo Personalizado', shortName: 'Personalizada', watts: 150 }
+      },
+      printerWatts: 180,
+      electricityTariff: 0.85,
+      printerPrice: 2400.00,
+      printerLifespanHours: 3500,
+      boxCostPrice: 3.00,
+      otherSuppliesPerHour: 0.25
+    };
+
+    let costParams = JSON.parse(JSON.stringify(DEFAULT_COST_PARAMS));
+
+    // GUARDADO Y CARGA PERSISTENTE DE TODA LA CALCULADORA
+    function saveAppState() {
+      try {
+        const state = {
+          config: config,
+          quantity: parseInt(document.getElementById('input-quantity')?.value) || 1,
+          boxMode: boxMode,
+          baseVal: parseFloat(document.getElementById('input-base-val')?.value) || 5.00,
+          rateGrams: parseFloat(document.getElementById('input-rate-grams')?.value) || 0.18,
+          gramsVal: parseFloat(document.getElementById('input-grams-val')?.value) || 100,
+          rateHours: parseFloat(document.getElementById('input-rate-hours')?.value) || 2.00,
+          hoursVal: parseFloat(document.getElementById('input-hours-val')?.value) || 2.5,
+          deliveryFee: parseFloat(document.getElementById('input-delivery-fee')?.value) || 8.00,
+          boxFee: parseFloat(document.getElementById('input-box-fee')?.value) || 3.00,
+          nightPct: parseFloat(document.getElementById('input-night-pct')?.value) || 7,
+          costParams: costParams
+        };
+        localStorage.setItem('camus3d_calculator_state', JSON.stringify(state));
+      } catch(e) {
+        console.warn('No se pudo guardar estado en localStorage:', e);
+      }
+    }
+
+    function loadAppState() {
+      try {
+        const saved = localStorage.getItem('camus3d_calculator_state');
+        if (!saved) return;
+        const state = JSON.parse(saved);
+
+        if (state.config) {
+          config = Object.assign({}, DEFAULT_CONFIG, state.config);
+          ['delivery', 'box', 'night'].forEach(key => {
+            const el = document.getElementById(`opt-${key}`);
+            if (el) {
+              if (config[key]) {
+                el.classList.add('active');
+              } else {
+                el.classList.remove('active');
+              }
+            }
+          });
+        }
+
+        if (state.boxMode !== undefined) {
+          boxMode = state.boxMode;
+          const btnBatch = document.getElementById('btn-box-mode-batch');
+          const btnUnit = document.getElementById('btn-box-mode-unit');
+          if (btnBatch && btnUnit) {
+            if (boxMode === 'batch') {
+              btnBatch.classList.add('active');
+              btnUnit.classList.remove('active');
+            } else {
+              btnBatch.classList.remove('active');
+              btnUnit.classList.add('active');
+            }
+          }
+        }
+        if (state.quantity !== undefined) {
+          const elQty = document.getElementById('input-quantity');
+          if (elQty) elQty.value = Math.max(1, parseInt(state.quantity) || 1);
+        }
+        if (state.baseVal !== undefined) {
+          const el = document.getElementById('input-base-val');
+          if (el) el.value = parseFloat(state.baseVal).toFixed(2);
+        }
+        if (state.rateGrams !== undefined) {
+          const el = document.getElementById('input-rate-grams');
+          if (el) el.value = parseFloat(state.rateGrams).toFixed(2);
+        }
+        if (state.gramsVal !== undefined) {
+          const elVal = document.getElementById('input-grams-val');
+          const elRange = document.getElementById('input-grams');
+          if (elVal) elVal.value = state.gramsVal;
+          if (elRange) elRange.value = state.gramsVal;
+        }
+        if (state.rateHours !== undefined) {
+          const el = document.getElementById('input-rate-hours');
+          if (el) el.value = parseFloat(state.rateHours).toFixed(2);
+        }
+        if (state.hoursVal !== undefined) {
+          const elVal = document.getElementById('input-hours-val');
+          const elRange = document.getElementById('input-hours');
+          if (elVal) elVal.value = parseFloat(state.hoursVal).toFixed(1);
+          if (elRange) elRange.value = state.hoursVal;
+        }
+        if (state.deliveryFee !== undefined) {
+          const el = document.getElementById('input-delivery-fee');
+          if (el) el.value = parseFloat(state.deliveryFee).toFixed(2);
+        }
+        if (state.nightPct !== undefined) {
+          const el = document.getElementById('input-night-pct');
+          if (el) el.value = state.nightPct;
+        }
+        if (state.costParams) {
+          costParams = Object.assign({}, DEFAULT_COST_PARAMS, state.costParams);
+          if (state.costParams.filaments) {
+            costParams.filaments = Object.assign({}, DEFAULT_COST_PARAMS.filaments, state.costParams.filaments);
+          }
+        }
+        // Sincronizar costo de caja (priorizar el configurado en costParams si existe)
+        const elBox = document.getElementById('input-box-fee');
+        if (state.costParams && state.costParams.boxCostPrice !== undefined) {
+          const parsedBox = parseFloat(state.costParams.boxCostPrice);
+          costParams.boxCostPrice = parsedBox;
+          if (elBox) elBox.value = parsedBox.toFixed(2);
+        } else if (state.boxFee !== undefined) {
+          const parsedBox = parseFloat(state.boxFee);
+          costParams.boxCostPrice = parsedBox;
+          if (elBox) elBox.value = parsedBox.toFixed(2);
+        }
+        const modalBoxInput = document.getElementById('modal-input-box-cost');
+        if (modalBoxInput && costParams.boxCostPrice !== undefined) {
+          modalBoxInput.value = costParams.boxCostPrice.toFixed(2);
+        }
+      } catch(e) {
+        console.warn('Error al cargar datos desde localStorage:', e);
+      }
+    }
+
+    function onNightBlur(input) {
+      let num = parseFloat(input.value);
+      if (isNaN(num) || num < 0) num = 7;
+      input.value = num;
+      calculate();
+    }
+
+    function onDeliveryBlur(input) {
+      let num = parseFloat(input.value);
+      if (isNaN(num) || num < 0) num = 8.00;
+      input.value = num.toFixed(2);
+      calculate();
+    }
+
+    function onBoxInput(input) {
+      let num = parseFloat(input.value);
+      if (!isNaN(num) && num >= 0) {
+        costParams.boxCostPrice = num;
+        const modalBox = document.getElementById('modal-input-box-cost');
+        if (modalBox) modalBox.value = num.toFixed(2);
+      }
+      calculate();
+    }
+
+    function onBoxBlur(input) {
+      let num = parseFloat(input.value);
+      if (isNaN(num) || num < 0) num = costParams.boxCostPrice || 3.00;
+      input.value = num.toFixed(2);
+      costParams.boxCostPrice = num;
+      const modalBox = document.getElementById('modal-input-box-cost');
+      if (modalBox) modalBox.value = num.toFixed(2);
+      calculate();
+    }
+
+    function toggleComponent(key) {
+      config[key] = !config[key];
+      calculate();
+    }
+
+    function toggleOption(key) {
+      config[key] = !config[key];
+      const el = document.getElementById(`opt-${key}`);
+      if (config[key]) {
+        el.classList.add('active');
+      } else {
+        el.classList.remove('active');
+      }
+      calculate();
+    }
+
+    function onGramsSlider(val) {
+      document.getElementById('input-grams-val').value = val;
+      calculate();
+    }
+
+    function onGramsInput(val) {
+      let num = parseFloat(val);
+      if (!isNaN(num)) {
+        document.getElementById('input-grams').value = Math.min(1000, Math.max(10, num));
+      }
+      calculate();
+    }
+
+    function onGramsBlur(input) {
+      let num = parseFloat(input.value);
+      if (isNaN(num) || num < 1) num = 10;
+      input.value = num;
+      document.getElementById('input-grams').value = Math.min(1000, Math.max(10, num));
+      calculate();
+    }
+
+    function onRateBlur(input) {
+      let num = parseFloat(input.value);
+      if (isNaN(num) || num <= 0) num = 0.18;
+      input.value = num.toFixed(2);
+      calculate();
+    }
+
+    function onHoursSlider(val) {
+      document.getElementById('input-hours-val').value = parseFloat(val).toFixed(1);
+      calculate();
+    }
+
+    function onHoursInput(val) {
+      let num = parseFloat(val);
+      if (!isNaN(num)) {
+        document.getElementById('input-hours').value = Math.min(72.0, Math.max(1.0, num));
+      }
+      calculate();
+    }
+
+    function onHoursBlur(input) {
+      let num = parseFloat(input.value);
+      if (isNaN(num) || num < 0.1) num = 1.0;
+      input.value = num.toFixed(1);
+      document.getElementById('input-hours').value = Math.min(72.0, Math.max(1.0, num));
+      calculate();
+    }
+
+    function onRateHoursBlur(input) {
+      let num = parseFloat(input.value);
+      if (isNaN(num) || num <= 0) num = 2.00;
+      input.value = num.toFixed(2);
+      calculate();
+    }
+
+    function onBaseBlur(input) {
+      let num = parseFloat(input.value);
+      if (isNaN(num) || num < 0) num = 5.00;
+      input.value = num.toFixed(2);
+      calculate();
+    }
+
+        // GESTIÓN DE CANTIDAD DE ARTÍCULOS A COTIZAR
+    function changeQuantity(delta) {
+      const input = document.getElementById('input-quantity');
+      let current = parseInt(input.value) || 1;
+      current = Math.max(1, current + delta);
+      input.value = current;
+      calculate();
+    }
+
+    function onQuantityInput(val) {
+      let num = parseInt(val);
+      if (!isNaN(num) && num >= 1) {
+        calculate();
+      }
+    }
+
+    function onQuantityBlur(input) {
+      let num = parseInt(input.value);
+      if (isNaN(num) || num < 1) num = 1;
+      input.value = num;
+      calculate();
+    }
+
+        // MODALIDAD DE CAJA ANTICOLAPSO (LOTE VS POR PIEZA)
+    let boxMode = 'batch'; // 'batch' (1 caja para todo el lote) o 'unit' (1 caja por pieza)
+
+    function setBoxMode(mode) {
+      boxMode = mode;
+      const btnBatch = document.getElementById('btn-box-mode-batch');
+      const btnUnit = document.getElementById('btn-box-mode-unit');
+      if (btnBatch && btnUnit) {
+        if (mode === 'batch') {
+          btnBatch.classList.add('active');
+          btnUnit.classList.remove('active');
+        } else {
+          btnBatch.classList.remove('active');
+          btnUnit.classList.add('active');
+        }
+      }
+      calculate();
+    }
+
+    // GESTIÓN DEL MODAL DE COSTOS BASE
+    function openCostModal() {
+      const modal = document.getElementById('modal-costos');
+      renderModalFilaments();
+      
+      const selectPrinter = document.getElementById('modal-printer-select');
+      if (selectPrinter) selectPrinter.value = costParams.activePrinter;
+
+      const inputWatts = document.getElementById('modal-input-watts');
+      if (inputWatts) inputWatts.value = costParams.printerWatts;
+
+      const inputElec = document.getElementById('modal-input-elec-rate');
+      if (inputElec) inputElec.value = costParams.electricityTariff.toFixed(2);
+
+      const inputPrice = document.getElementById('modal-input-printer-price');
+      if (inputPrice) inputPrice.value = costParams.printerPrice.toFixed(2);
+
+      const inputLife = document.getElementById('modal-input-printer-lifespan');
+      if (inputLife) inputLife.value = costParams.printerLifespanHours;
+
+      const inputBox = document.getElementById('modal-input-box-cost');
+      const inputBoxFee = document.getElementById('input-box-fee');
+      const currentBoxVal = inputBoxFee ? (parseFloat(inputBoxFee.value) || costParams.boxCostPrice || 3.00) : (costParams.boxCostPrice || 3.00);
+      costParams.boxCostPrice = currentBoxVal;
+      if (inputBox) inputBox.value = currentBoxVal.toFixed(2);
+
+      const inputSupplies = document.getElementById('modal-input-other-supplies');
+      if (inputSupplies) inputSupplies.value = costParams.otherSuppliesPerHour.toFixed(2);
+
+      updateModalPreview();
+
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeCostModal() {
+      const modal = document.getElementById('modal-costos');
+      modal.classList.remove('active');
+      document.body.style.overflow = '';
+    }
+
+    function onModalOverlayClick(e) {
+      if (e.target === document.getElementById('modal-costos')) {
+        closeCostModal();
+      }
+    }
+
+    function renderModalFilaments() {
+      const container = document.getElementById('modal-filament-list');
+      if (!container) return;
+      let html = '';
+      for (const [key, fil] of Object.entries(costParams.filaments)) {
+        const isSelected = key === costParams.activeFilament;
+        const costPerGram = (fil.priceKg / 1000).toFixed(3);
+        html += `
+          <div class="filament-choice-card ${isSelected ? 'selected' : ''}" onclick="selectModalFilament('${key}')">
+            <div class="filament-radio-row">
+              <div class="filament-radio"></div>
+              <span class="filament-name">${fil.name}</span>
+            </div>
+            <div class="filament-price-row" onclick="event.stopPropagation()">
+              <span class="filament-input-label">Precio Bobina (1 kg):</span>
+              <div style="display:flex; align-items:center; gap:4px;">
+                <span style="font-family:var(--font-mono); font-size:12px; color:var(--text-muted);">S/</span>
+                <input type="number" class="filament-input-box" step="1.00" min="1.00" value="${fil.priceKg.toFixed(2)}" oninput="onFilamentPriceChange('${key}', this.value)">
+              </div>
+            </div>
+            <div style="font-size:11px; font-family:var(--font-mono); color:var(--text-muted); display:flex; justify-content:space-between; margin-top:2px;">
+              <span>Costo unitario:</span>
+              <span style="color:var(--blue-400); font-weight:700;">S/ ${costPerGram} / g</span>
+            </div>
+          </div>
+        `;
+      }
+      container.innerHTML = html;
+    }
+
+    function selectModalFilament(key) {
+      if (costParams.filaments[key]) {
+        costParams.activeFilament = key;
+        renderModalFilaments();
+        updateModalPreview();
+      }
+    }
+
+    function onFilamentPriceChange(key, val) {
+      let num = parseFloat(val);
+      if (!isNaN(num) && num > 0) {
+        costParams.filaments[key].priceKg = num;
+        updateModalPreview();
+      }
+    }
+
+    function onPrinterSelectChange(val) {
+      costParams.activePrinter = val;
+      const printerData = costParams.printers[val];
+      if (printerData && val !== 'custom') {
+        costParams.printerWatts = printerData.watts;
+        document.getElementById('modal-input-watts').value = printerData.watts;
+      }
+      updateModalPreview();
+    }
+
+    function updateModalPreview() {
+      const watts = parseFloat(document.getElementById('modal-input-watts')?.value) || costParams.printerWatts;
+      const elecRate = parseFloat(document.getElementById('modal-input-elec-rate')?.value) || costParams.electricityTariff;
+      const printerPrice = parseFloat(document.getElementById('modal-input-printer-price')?.value) || costParams.printerPrice;
+      const printerLife = parseFloat(document.getElementById('modal-input-printer-lifespan')?.value) || costParams.printerLifespanHours;
+      const otherSupplies = parseFloat(document.getElementById('modal-input-other-supplies')?.value) || costParams.otherSuppliesPerHour;
+
+      const elecCost = (watts / 1000) * elecRate;
+      const deprCost = printerLife > 0 ? (printerPrice / printerLife) : 0;
+      const totalHourCost = elecCost + deprCost + otherSupplies;
+
+      const previewElec = document.getElementById('preview-elec-cost');
+      if (previewElec) previewElec.textContent = `S/ ${elecCost.toFixed(3)} / hora`;
+
+      const previewDepr = document.getElementById('preview-depr-cost');
+      if (previewDepr) previewDepr.textContent = `S/ ${deprCost.toFixed(3)} / hora`;
+
+      const previewTotalHour = document.getElementById('preview-total-hour-cost');
+      if (previewTotalHour) previewTotalHour.textContent = `S/ ${totalHourCost.toFixed(2)} / h`;
+    }
+
+    function saveAndApplyCosts() {
+      const watts = parseFloat(document.getElementById('modal-input-watts').value);
+      if (!isNaN(watts) && watts > 0) costParams.printerWatts = watts;
+
+      const elecRate = parseFloat(document.getElementById('modal-input-elec-rate').value);
+      if (!isNaN(elecRate) && elecRate > 0) costParams.electricityTariff = elecRate;
+
+      const printerPrice = parseFloat(document.getElementById('modal-input-printer-price').value);
+      if (!isNaN(printerPrice) && printerPrice > 0) costParams.printerPrice = printerPrice;
+
+      const printerLife = parseFloat(document.getElementById('modal-input-printer-lifespan').value);
+      if (!isNaN(printerLife) && printerLife > 0) costParams.printerLifespanHours = printerLife;
+
+      const boxCost = parseFloat(document.getElementById('modal-input-box-cost').value);
+      if (!isNaN(boxCost) && boxCost >= 0) {
+        costParams.boxCostPrice = boxCost;
+        const inputBoxFee = document.getElementById('input-box-fee');
+        if (inputBoxFee) inputBoxFee.value = boxCost.toFixed(2);
+      }
+
+      const supplies = parseFloat(document.getElementById('modal-input-other-supplies').value);
+      if (!isNaN(supplies) && supplies >= 0) costParams.otherSuppliesPerHour = supplies;
+
+      const selectPrinter = document.getElementById('modal-printer-select');
+      if (selectPrinter) costParams.activePrinter = selectPrinter.value;
+
+      try {
+        localStorage.setItem('camus3d_cost_params', JSON.stringify(costParams));
+      } catch(e) {
+        console.warn('No se pudo guardar en localStorage:', e);
+      }
+
+      closeCostModal();
+      calculate();
+    }
+
+    function resetCostDefaults() {
+      costParams = JSON.parse(JSON.stringify(DEFAULT_COST_PARAMS));
+      config = JSON.parse(JSON.stringify(DEFAULT_CONFIG));
+
+      try {
+        localStorage.removeItem('camus3d_calculator_state');
+        localStorage.removeItem('camus3d_cost_params');
+      } catch(e) {}
+
+      // Restablecer estados visuales de opciones
+      ['delivery', 'box', 'night'].forEach(key => {
+        const el = document.getElementById(`opt-${key}`);
+        if (el) {
+          if (config[key]) el.classList.add('active');
+          else el.classList.remove('active');
+        }
+      });
+
+      // Restablecer inputs principales a valores iniciales
+      document.getElementById('input-quantity').value = '1';
+      setBoxMode('batch');
+      document.getElementById('input-base-val').value = '5.00';
+      document.getElementById('input-rate-grams').value = '0.18';
+      document.getElementById('input-grams-val').value = '100';
+      document.getElementById('input-grams').value = '100';
+      document.getElementById('input-rate-hours').value = '2.00';
+      document.getElementById('input-hours-val').value = '2.5';
+      document.getElementById('input-hours').value = '2.5';
+      document.getElementById('input-delivery-fee').value = '8.00';
+      document.getElementById('input-box-fee').value = '3.00';
+      document.getElementById('input-night-pct').value = '7';
+
+      renderModalFilaments();
+      document.getElementById('modal-printer-select').value = costParams.activePrinter;
+      document.getElementById('modal-input-watts').value = costParams.printerWatts;
+      document.getElementById('modal-input-elec-rate').value = costParams.electricityTariff.toFixed(2);
+      document.getElementById('modal-input-printer-price').value = costParams.printerPrice.toFixed(2);
+      document.getElementById('modal-input-printer-lifespan').value = costParams.printerLifespanHours;
+      document.getElementById('modal-input-box-cost').value = costParams.boxCostPrice.toFixed(2);
+      document.getElementById('modal-input-other-supplies').value = costParams.otherSuppliesPerHour.toFixed(2);
+
+      updateModalPreview();
+      calculate();
+    }
+
+    function calculate() {
+      const qtyInput = document.getElementById('input-quantity');
+      const qty = Math.max(1, parseInt(qtyInput ? qtyInput.value : 1) || 1);
+
+      const gramsVal = parseFloat(document.getElementById('input-grams-val').value) || 0;
+      const hours = parseFloat(document.getElementById('input-hours-val').value) || 0;
+
+      // Totales del lote completo
+      const totalGrams = gramsVal * qty;
+      const totalHours = hours * qty;
+
+      // Actualizar tarjeta visual de cantidad
+      const cardQty = document.getElementById('card-quantity');
+      const badgeQty = document.getElementById('badge-qty-indicator');
+      if (cardQty && badgeQty) {
+        if (qty > 1) {
+          cardQty.classList.add('active-batch');
+          badgeQty.textContent = `Lote de ${qty} piezas`;
+        } else {
+          cardQty.classList.remove('active-batch');
+          badgeQty.textContent = '1 pieza';
+        }
+      }
+
+      // Tarifas editables por el usuario
+      const rateGramsVal = parseFloat(document.getElementById('input-rate-grams').value) || 0;
+      const rateBaseVal = parseFloat(document.getElementById('input-base-val').value) || 0;
+      const rateHoursVal = parseFloat(document.getElementById('input-rate-hours').value) || 0;
+
+      // Sincronizar tarjetas activas/inactivas en UI
+      const cardBase = document.getElementById('card-base');
+      const cardGrams = document.getElementById('card-grams');
+      const cardHours = document.getElementById('card-hours');
+
+      cardBase.className = `control-card ${config.base ? 'active-comp' : 'inactive-comp'}`;
+      cardGrams.className = `control-card ${config.grams ? 'active-comp' : 'inactive-comp'}`;
+      cardHours.className = `control-card ${config.hours ? 'active-comp' : 'inactive-comp'}`;
+
+      // Labels y cajas en cabeceras de tarjetas
+      const boxBaseContainer = document.getElementById('box-base-container');
+      const inputBaseVal = document.getElementById('input-base-val');
+      if (config.base) {
+        boxBaseContainer.className = 'control-val-box-container emerald';
+        inputBaseVal.disabled = false;
+      } else {
+        boxBaseContainer.className = 'control-val-box-container emerald inactive';
+        inputBaseVal.disabled = true;
+      }
+
+      const boxGramsContainer = document.getElementById('box-grams-container');
+      const inputGramsVal = document.getElementById('input-grams-val');
+      if (config.grams) {
+        boxGramsContainer.className = 'control-val-box-container';
+        inputGramsVal.disabled = false;
+      } else {
+        boxGramsContainer.className = 'control-val-box-container inactive';
+        inputGramsVal.disabled = true;
+      }
+
+      const boxHoursContainer = document.getElementById('box-hours-container');
+      const inputHoursVal = document.getElementById('input-hours-val');
+      if (config.hours) {
+        boxHoursContainer.className = 'control-val-box-container';
+        inputHoursVal.disabled = false;
+      } else {
+        boxHoursContainer.className = 'control-val-box-container inactive';
+        inputHoursVal.disabled = true;
+      }
+
+      // Cargos al Cliente (Lote Completo)
+      // Costo Fijo Base (Setup / STL): se cobra UNA sola vez para el lote
+      const baseCharge = config.base ? rateBaseVal : 0.00;
+      // Material y Horas: proporcionales al lote completo
+      const matCharge = config.grams ? (totalGrams * rateGramsVal) : 0.00;
+      const timeCharge = config.hours ? (totalHours * rateHoursVal) : 0.00;
+
+      // Despacho: flete único para el lote completo
+      let deliveryCharge = 0;
+      let deliveryCost = 0;
+      if (config.delivery) {
+        deliveryCharge = parseFloat(document.getElementById('input-delivery-fee').value) || 0;
+        deliveryCost = deliveryCharge;
+      }
+
+      // Gestión de modalidad de Caja Anticolapso (Por Lote vs Por Pieza)
+      const boxModeContainer = document.getElementById('box-mode-container');
+      const optBoxSub = document.getElementById('opt-box-sub');
+      if (boxModeContainer) {
+        if (qty > 1 && config.box) {
+          boxModeContainer.style.display = 'flex';
+          if (optBoxSub) {
+            optBoxSub.textContent = boxMode === 'batch' ? '1 caja para el lote' : `${qty} cajas individuales`;
+          }
+        } else {
+          boxModeContainer.style.display = 'none';
+          if (optBoxSub) optBoxSub.textContent = 'Empaque rígido';
+        }
+      }
+
+      // Cálculo de cobro y costo de caja según modalidad
+      let boxCharge = 0;
+      let boxCost = 0;
+      const boxFeeUnit = parseFloat(document.getElementById('input-box-fee').value) || 0;
+      const boxCostUnit = costParams.boxCostPrice !== undefined ? costParams.boxCostPrice : boxFeeUnit;
+      const isBoxPerPiece = (boxMode === 'unit' && qty > 1);
+      const boxMultiplier = isBoxPerPiece ? qty : 1;
+
+      if (config.box) {
+        boxCharge = boxFeeUnit * boxMultiplier;
+        boxCost = boxCostUnit * boxMultiplier;
+      }
+
+      const extraCharge = deliveryCharge + boxCharge;
+      // Subtotal de manufactura 3D sobre el cual aplica el recargo de turno de madrugada
+      // (Se excluyen caja anticolapso y flete para no aplicar recargo nocturno a empaque o envíos)
+      const printServiceSubtotal = baseCharge + matCharge + timeCharge;
+
+      // Recargo adicional del turno de madrugada
+      const nightPctInput = document.getElementById('input-night-pct');
+      const nightPct = nightPctInput ? (parseFloat(nightPctInput.value) || 7) : 7;
+      const nightSurcharge = config.night ? (printServiceSubtotal * (nightPct / 100)) : 0.00;
+
+      const totalClient = printServiceSubtotal + nightSurcharge + extraCharge;
+      const unitPrice = qty > 0 ? (totalClient / qty) : 0.00;
+
+      // CÁLCULO DE AHORRO (Comparativa: N compras individuales separadas vs comprar en Lote)
+      const singleMatCharge = config.grams ? (gramsVal * rateGramsVal) : 0.00;
+      const singleTimeCharge = config.hours ? (hours * rateHoursVal) : 0.00;
+      const singleBoxCharge = config.box ? boxFeeUnit : 0.00;
+      const singleDeliveryCharge = config.delivery ? deliveryCharge : 0.00;
+      const singlePrintSubtotal = baseCharge + singleMatCharge + singleTimeCharge;
+      const singleNightSurcharge = config.night ? (singlePrintSubtotal * (nightPct / 100)) : 0.00;
+      const singleTotalPrice = singlePrintSubtotal + singleNightSurcharge + singleDeliveryCharge + singleBoxCharge;
+
+      const totalIfSeparate = singleTotalPrice * qty;
+      const totalSavings = Math.max(0, totalIfSeparate - totalClient);
+
+      // CÁLCULO DE COSTOS DIRECTOS DINÁMICOS BASADOS EN PARÁMETROS DEL MODAL
+      const activeFil = costParams.filaments[costParams.activeFilament] || costParams.filaments.pla_plus;
+      const filCostPerGram = (activeFil.priceKg || 58.00) / 1000;
+      const costFilament = config.grams ? (totalGrams * filCostPerGram) : 0.00;
+
+      const elecCostPerHour = ((costParams.printerWatts || 180) / 1000) * (costParams.electricityTariff || 0.85);
+      const costElectricity = config.hours ? (totalHours * elecCostPerHour) : 0.00;
+
+      const deprCostPerHour = (costParams.printerPrice || 2400.00) / (costParams.printerLifespanHours || 3500);
+      const costDepreciation = config.hours ? (totalHours * deprCostPerHour) : 0.00;
+
+      const suppliesCostPerHour = costParams.otherSuppliesPerHour || 0.25;
+      const costSupplies = config.hours ? (totalHours * suppliesCostPerHour) : 0.00;
+
+      const totalDirectCost = costFilament + costElectricity + costDepreciation + costSupplies + boxCost + deliveryCost;
+
+      const netProfit = totalClient - totalDirectCost;
+
+      // Base operativa para margen neto: se descuentan costos transferidos 1:1 al cliente (caja y flete)
+      // para evitar que insumos externos que no salen del bolsillo del taller diluyan el margen del servicio
+      const passThroughCost = (config.box ? boxCost : 0) + (config.delivery ? deliveryCost : 0);
+      const marginBase = Math.max(0, totalClient - passThroughCost);
+      const marginPct = marginBase > 0 ? Math.round((netProfit / marginBase) * 100) : (totalClient > 0 ? Math.round((netProfit / totalClient) * 100) : 0);
+      const unitProfit = qty > 0 ? (netProfit / qty) : 0.00;
+
+      // Tarifa Plana Antigua (S/ 5.00/h sin cobrar por material)
+      const flatTotal = config.hours ? (totalHours * 5.00) : 0.00;
+
+      // Actualizar UI Hero Card
+      document.getElementById('res-total').textContent = `S/ ${totalClient.toFixed(2)}`;
+      document.getElementById('res-unit-price').textContent = `S/ ${unitPrice.toFixed(2)} c/u`;
+      document.getElementById('res-profit').textContent = `S/ ${netProfit.toFixed(2)}`;
+      
+      const resMargin = document.getElementById('res-margin');
+      if (netProfit >= 0) {
+        resMargin.textContent = `Margen Neto: ${marginPct}%`;
+        resMargin.style.color = 'var(--emerald-400)';
+      } else {
+        resMargin.textContent = `Pérdida Neta: ${marginPct}%`;
+        resMargin.style.color = 'var(--crimson-400)';
+      }
+
+      // Títulos dinámicos según cantidad (Unitario vs Lote)
+      const lblTotalTitle = document.getElementById('lbl-total-title');
+      const lblProfitTitle = document.getElementById('lbl-profit-title');
+      const badgeBatchTag = document.getElementById('badge-batch-tag');
+      const wrapSavings = document.getElementById('wrap-savings');
+      const resSavings = document.getElementById('res-savings');
+      const resUnitProfit = document.getElementById('res-unit-profit');
+
+      // El chip de ahorro se mantiene siempre a la vista
+      if (wrapSavings && resSavings) {
+        wrapSavings.style.display = 'inline-flex';
+        resSavings.textContent = `S/ ${totalSavings.toFixed(2)}`;
+      }
+
+      if (qty > 1) {
+        if (lblTotalTitle) lblTotalTitle.textContent = `Total del Pedido (${qty} piezas)`;
+        if (lblProfitTitle) lblProfitTitle.textContent = 'Utilidad Neta del Lote';
+        if (badgeBatchTag) {
+          badgeBatchTag.style.display = 'inline-block';
+          badgeBatchTag.textContent = `Lote de ${qty} unidades`;
+        }
+        if (resUnitProfit) {
+          resUnitProfit.style.display = 'block';
+          resUnitProfit.textContent = `(S/ ${unitProfit.toFixed(2)} / unidad)`;
+        }
+      } else {
+        if (lblTotalTitle) lblTotalTitle.textContent = 'Total del Pedido';
+        if (lblProfitTitle) lblProfitTitle.textContent = 'Utilidad Neta de la Pieza';
+        if (badgeBatchTag) badgeBatchTag.style.display = 'none';
+        if (resUnitProfit) resUnitProfit.style.display = 'none';
+      }
+
+      // Desglose en vivo de las cajas superiores con tarifas editadas
+      const resBase = document.getElementById('res-base');
+      if (config.base) {
+        resBase.innerHTML = `S/ ${rateBaseVal.toFixed(2)}`;
+        resBase.style.color = '#FFFFFF';
+      } else {
+        resBase.innerHTML = '<span style="color:var(--text-muted); text-decoration:line-through;">S/ 0.00</span>';
+      }
+
+      document.getElementById('txt-calc-g').textContent = qty > 1 ? `${totalGrams}g (${qty}x ${gramsVal}g)` : `${gramsVal}g`;
+      document.getElementById('txt-calc-rate-g').textContent = rateGramsVal.toFixed(2);
+      const resMat = document.getElementById('res-mat');
+      if (config.grams) {
+        resMat.innerHTML = `S/ ${matCharge.toFixed(2)}`;
+        resMat.style.color = '#FFFFFF';
+      } else {
+        resMat.innerHTML = '<span style="color:var(--text-muted); text-decoration:line-through;">S/ 0.00</span>';
+      }
+
+      document.getElementById('txt-calc-h').textContent = qty > 1 ? `${totalHours.toFixed(1)}h (${qty}x ${hours.toFixed(1)}h)` : `${hours.toFixed(1)}h`;
+      document.getElementById('txt-calc-rate-h').textContent = rateHoursVal.toFixed(2);
+      const resTime = document.getElementById('res-time');
+      if (config.hours) {
+        resTime.innerHTML = `S/ ${timeCharge.toFixed(2)}`;
+        resTime.style.color = '#FFFFFF';
+      } else {
+        resTime.innerHTML = '<span style="color:var(--text-muted); text-decoration:line-through;">S/ 0.00</span>';
+      }
+
+      // Desglose de Caja Anticolapso en Hero Card
+      const itemBox = document.getElementById('item-box-breakdown');
+      const resBoxVal = document.getElementById('res-box-val');
+      if (itemBox && resBoxVal) {
+        if (config.box) {
+          itemBox.style.display = 'block';
+          resBoxVal.textContent = `+S/ ${boxCharge.toFixed(2)}`;
+          const boxLbl = itemBox.querySelector('.breakdown-label');
+          if (boxLbl) {
+            if (qty > 1) {
+              boxLbl.textContent = isBoxPerPiece ? `Caja Anticolapso (${qty}x S/ ${boxFeeUnit.toFixed(2)})` : 'Caja Anticolapso (Empaque de lote)';
+            } else {
+              boxLbl.textContent = 'Caja Anticolapso';
+            }
+          }
+        } else {
+          itemBox.style.display = 'none';
+        }
+      }
+
+      // Desglose de Despacho Campus en Hero Card
+      const itemDelivery = document.getElementById('item-delivery-breakdown');
+      const resDeliveryVal = document.getElementById('res-delivery-val');
+      if (itemDelivery && resDeliveryVal) {
+        if (config.delivery) {
+          itemDelivery.style.display = 'block';
+          resDeliveryVal.textContent = `+S/ ${deliveryCharge.toFixed(2)}`;
+          const delLbl = itemDelivery.querySelector('.breakdown-label');
+          if (delLbl) {
+            delLbl.textContent = qty > 1 ? 'Despacho Campus (Envío único)' : 'Despacho Campus';
+          }
+        } else {
+          itemDelivery.style.display = 'none';
+        }
+      }
+
+      // Desglose de recargo por madrugada
+      const itemNight = document.getElementById('item-night-breakdown');
+      const resNight = document.getElementById('res-night');
+      const txtNightPct = document.getElementById('txt-calc-night-pct');
+      if (itemNight && resNight && txtNightPct) {
+        txtNightPct.textContent = nightPct;
+        if (config.night) {
+          itemNight.style.display = 'block';
+          resNight.textContent = `+S/ ${nightSurcharge.toFixed(2)}`;
+        } else {
+          itemNight.style.display = 'none';
+        }
+      }
+
+      // Actualizar nombres en tarjetas del panel izquierdo
+      const cardFilName = document.getElementById('txt-card-fil-name');
+      if (cardFilName) cardFilName.textContent = activeFil.name;
+
+      const cardPrinterName = document.getElementById('txt-card-printer-name');
+      const printerData = costParams.printers[costParams.activePrinter] || costParams.printers.k1c;
+      if (cardPrinterName) cardPrinterName.textContent = `${printerData.name} (${costParams.printerWatts}W)`;
+
+      // Actualizar Desglose en Tarjeta "Estructura de Costo Directo"
+      const costDirectEl = document.getElementById('cost-direct');
+      if (costDirectEl) {
+        if (qty > 1) {
+          costDirectEl.innerHTML = `S/ ${totalDirectCost.toFixed(2)} <span style="font-size:13px; font-weight:700; color:var(--text-muted);">(S/ ${(totalDirectCost/qty).toFixed(2)} / u)</span>`;
+        } else {
+          costDirectEl.textContent = `S/ ${totalDirectCost.toFixed(2)}`;
+        }
+      }
+      
+      const txtCostFilName = document.getElementById('txt-cost-fil-name');
+      if (txtCostFilName) txtCostFilName.textContent = activeFil.name.split(' ')[0];
+      const txtCostFilRate = document.getElementById('txt-cost-fil-rate');
+      if (txtCostFilRate) txtCostFilRate.textContent = `S/ ${filCostPerGram.toFixed(3)}/g`;
+      document.getElementById('cost-fil').textContent = config.grams ? `S/ ${costFilament.toFixed(2)}` : 'S/ 0.00 (Excluido)';
+
+      const txtCostPrinterName = document.getElementById('txt-cost-printer-name');
+      if (txtCostPrinterName) txtCostPrinterName.textContent = printerData.shortName;
+      const txtCostElecRate = document.getElementById('txt-cost-elec-rate');
+      if (txtCostElecRate) txtCostElecRate.textContent = `S/ ${elecCostPerHour.toFixed(2)}/h`;
+      document.getElementById('cost-elec').textContent = config.hours ? `S/ ${costElectricity.toFixed(2)}` : 'S/ 0.00 (Excluido)';
+
+      const txtCostDeprRate = document.getElementById('txt-cost-depr-rate');
+      if (txtCostDeprRate) txtCostDeprRate.textContent = `S/ ${deprCostPerHour.toFixed(2)}/h`;
+      document.getElementById('cost-depr').textContent = config.hours ? `S/ ${costDepreciation.toFixed(2)}` : 'S/ 0.00 (Excluido)';
+
+      const txtCostSuppliesRate = document.getElementById('txt-cost-supplies-rate');
+      if (txtCostSuppliesRate) txtCostSuppliesRate.textContent = `S/ ${suppliesCostPerHour.toFixed(2)}/h`;
+      document.getElementById('cost-supplies').textContent = config.hours ? `S/ ${costSupplies.toFixed(2)}` : 'S/ 0.00 (Excluido)';
+
+      if (config.box) {
+        document.getElementById('cost-box').textContent = (qty > 1 && isBoxPerPiece) ? `S/ ${boxCost.toFixed(2)} (${qty} cajas)` : `S/ ${boxCost.toFixed(2)}`;
+      } else {
+        document.getElementById('cost-box').textContent = 'S/ 0.00 (No incluida)';
+      }
+      document.getElementById('cost-delivery').textContent = config.delivery ? `S/ ${deliveryCost.toFixed(2)}` : 'S/ 0.00 (No incluido)';
+
+      // Comparativa Plana contra Costo Técnico Real
+      const hasAnyActive = config.base || config.grams || config.hours || config.delivery || config.box || config.night;
+      const flatDiag = document.getElementById('flat-diag');
+      const flatBadge = document.getElementById('flat-badge');
+
+      if (!hasAnyActive || (totalClient === 0 && totalDirectCost === 0)) {
+        document.getElementById('flat-price').textContent = 'S/ 0.00';
+        flatDiag.innerHTML = 'Costo directo real: S/ 0.00.<br>Sin componentes seleccionados. Activa al menos un parámetro para calcular la comparativa.';
+        if (flatBadge) {
+          flatBadge.textContent = 'Sin cotización activa';
+          flatBadge.style.color = 'var(--text-muted)';
+        }
+      } else if (!config.hours) {
+        document.getElementById('flat-price').textContent = 'S/ 0.00';
+        flatDiag.innerHTML = `Costo directo real: S/ ${totalDirectCost.toFixed(2)}.<br>Tiempo de máquina no incluido en el pedido. El cobro antiguo informal solo tarifaba por hora de impresión.`;
+        if (flatBadge) {
+          flatBadge.textContent = 'Sin horas de máquina';
+          flatBadge.style.color = 'var(--text-muted)';
+        }
+      } else {
+        document.getElementById('flat-price').textContent = `S/ ${flatTotal.toFixed(2)}`;
+        const flatDiff = flatTotal - totalDirectCost;
+
+        if (flatTotal < totalDirectCost) {
+          const loss = Math.abs(flatDiff);
+          const unitLoss = loss / qty;
+          const lossText = qty > 1 
+            ? `Pérdida económica de S/ ${loss.toFixed(2)} en el lote (-S/ ${unitLoss.toFixed(2)} / u)`
+            : `Pérdida económica de S/ ${loss.toFixed(2)} por pieza`;
+          flatDiag.innerHTML = `Costo directo real: S/ ${totalDirectCost.toFixed(2)}.<br><strong style="color:var(--crimson-400);">${lossText}.</strong> El taller informal no cobra el material, subsidia la bobina y termina cancelando.`;
+          if (flatBadge) {
+            flatBadge.textContent = 'Modelo inviable (Pérdida para el taller)';
+            flatBadge.style.color = 'var(--crimson-400)';
+          }
+        } else if (flatTotal > totalClient) {
+          const overcharge = flatTotal - totalClient;
+          const unitOvercharge = overcharge / qty;
+          const overchargeText = qty > 1 
+            ? `Sobrecosto al estudiante de +S/ ${overcharge.toFixed(2)} en el lote (+S/ ${unitOvercharge.toFixed(2)} / u más caro que CAMUS)`
+            : `Sobrecosto al estudiante (+S/ ${overcharge.toFixed(2)} más caro que CAMUS)`;
+          flatDiag.innerHTML = `Costo directo real: S/ ${totalDirectCost.toFixed(2)}.<br><strong style="color:var(--crimson-400);">${overchargeText}.</strong> Cobrar S/ 5.00/h a ciegas castiga las piezas de muchas horas sin transparentar el peso.`;
+          if (flatBadge) {
+            flatBadge.textContent = 'Sobrecosto al estudiante';
+            flatBadge.style.color = 'var(--crimson-400)';
+          }
+        } else {
+          const flatMargin = flatTotal > 0 ? Math.round((flatDiff / flatTotal) * 100) : 0;
+          if (flatMargin < 35) {
+            flatDiag.innerHTML = `Costo directo real: S/ ${totalDirectCost.toFixed(2)}.<br>Margen vulnerable de apenas ${flatMargin}%. Muy riesgoso ante cualquier fallo o merma de laminado.`;
+            if (flatBadge) {
+              flatBadge.textContent = 'Alto riesgo operativo';
+              flatBadge.style.color = '#F59E0B';
+            }
+          } else {
+            flatDiag.innerHTML = `Costo directo real: S/ ${totalDirectCost.toFixed(2)}.<br>Margen estimado de ${flatMargin}%, pero sin control de merma, soporte STL ni garantía de reposición.`;
+            if (flatBadge) {
+              flatBadge.textContent = 'Tarifa sin garantía ni control STL';
+              flatBadge.style.color = 'var(--text-muted)';
+            }
+          }
+        }
+      }
+
+      // Guardar automáticamente cualquier cambio en localStorage
+      saveAppState();
+    }
+
+    // Inicializar y vincular atajos de teclado
+    window.onload = () => {
+      loadAppState();
+      calculate();
+
+      // Flechas teclado para cantidad de artículos
+      const qtyInputEl = document.getElementById('input-quantity');
+      if (qtyInputEl) {
+        qtyInputEl.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            changeQuantity(1);
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            changeQuantity(-1);
+          }
+        });
+      }
+
+      // Cerrar modal con tecla Escape
+      window.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          closeCostModal();
+        }
+      });
+
+      // Flechas teclado para precio por gramo (centavo en centavo)
+      const rateInput = document.getElementById('input-rate-grams');
+      if (rateInput) {
+        rateInput.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let currentVal = parseFloat(rateInput.value) || 0;
+            currentVal = Math.round((currentVal + 0.01) * 100) / 100;
+            rateInput.value = currentVal.toFixed(2);
+            calculate();
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            let currentVal = parseFloat(rateInput.value) || 0;
+            currentVal = Math.max(0.01, Math.round((currentVal - 0.01) * 100) / 100);
+            rateInput.value = currentVal.toFixed(2);
+            calculate();
+          }
+        });
+      }
+
+      // Flechas teclado para caja de gramos (de 5 en 5 gramos)
+      const gramsInput = document.getElementById('input-grams-val');
+      if (gramsInput) {
+        gramsInput.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let currentVal = parseFloat(gramsInput.value) || 10;
+            currentVal = currentVal + 5;
+            gramsInput.value = currentVal;
+            document.getElementById('input-grams').value = Math.min(1000, currentVal);
+            calculate();
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            let currentVal = parseFloat(gramsInput.value) || 10;
+            currentVal = Math.max(1, currentVal - 5);
+            gramsInput.value = currentVal;
+            document.getElementById('input-grams').value = Math.min(1000, Math.max(10, currentVal));
+            calculate();
+          }
+        });
+      }
+
+      // Flechas teclado para precio por hora (de 0.25 en 0.25)
+      const rateHoursInput = document.getElementById('input-rate-hours');
+      if (rateHoursInput) {
+        rateHoursInput.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let currentVal = parseFloat(rateHoursInput.value) || 0;
+            currentVal = Math.round((currentVal + 0.25) * 100) / 100;
+            rateHoursInput.value = currentVal.toFixed(2);
+            calculate();
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            let currentVal = parseFloat(rateHoursInput.value) || 0;
+            currentVal = Math.max(0.10, Math.round((currentVal - 0.25) * 100) / 100);
+            rateHoursInput.value = currentVal.toFixed(2);
+            calculate();
+          }
+        });
+      }
+
+      // Flechas teclado para caja de horas (de 0.5 en 0.5 horas)
+      const hoursInput = document.getElementById('input-hours-val');
+      if (hoursInput) {
+        hoursInput.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let currentVal = parseFloat(hoursInput.value) || 1.0;
+            currentVal = Math.round((currentVal + 0.5) * 10) / 10;
+            hoursInput.value = currentVal.toFixed(1);
+            document.getElementById('input-hours').value = Math.min(72.0, currentVal);
+            calculate();
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            let currentVal = parseFloat(hoursInput.value) || 1.0;
+            currentVal = Math.max(0.1, Math.round((currentVal - 0.5) * 10) / 10);
+            hoursInput.value = currentVal.toFixed(1);
+            document.getElementById('input-hours').value = Math.min(72.0, Math.max(1.0, currentVal));
+            calculate();
+          }
+        });
+      }
+
+      // Flechas teclado para costo fijo base (de 0.50 en 0.50)
+      const baseInput = document.getElementById('input-base-val');
+      if (baseInput) {
+        baseInput.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let currentVal = parseFloat(baseInput.value) || 0;
+            currentVal = Math.round((currentVal + 0.50) * 100) / 100;
+            baseInput.value = currentVal.toFixed(2);
+            calculate();
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            let currentVal = parseFloat(baseInput.value) || 0;
+            currentVal = Math.max(0.00, Math.round((currentVal - 0.50) * 100) / 100);
+            baseInput.value = currentVal.toFixed(2);
+            calculate();
+          }
+        });
+      }
+
+      // Flechas teclado para Despacho (de 1.00 en 1.00)
+      const deliveryInput = document.getElementById('input-delivery-fee');
+      if (deliveryInput) {
+        deliveryInput.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let currentVal = parseFloat(deliveryInput.value) || 0;
+            currentVal = Math.round((currentVal + 1.00) * 100) / 100;
+            deliveryInput.value = currentVal.toFixed(2);
+            calculate();
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            let currentVal = parseFloat(deliveryInput.value) || 0;
+            currentVal = Math.max(0.00, Math.round((currentVal - 1.00) * 100) / 100);
+            deliveryInput.value = currentVal.toFixed(2);
+            calculate();
+          }
+        });
+      }
+
+      // Flechas teclado para Caja (de 0.50 en 0.50)
+      const boxInput = document.getElementById('input-box-fee');
+      if (boxInput) {
+        boxInput.addEventListener('keydown', (e) => {
+          if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            let currentVal = parseFloat(boxInput.value) || 0;
+            currentVal = Math.round((currentVal + 0.50) * 100) / 100;
+            boxInput.value = currentVal.toFixed(2);
+            costParams.boxCostPrice = currentVal;
+            const modalInput = document.getElementById('modal-input-box-cost');
+            if (modalInput) modalInput.value = currentVal.toFixed(2);
+            calculate();
+          } else if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            let currentVal = parseFloat(boxInput.value) || 0;
+            currentVal = Math.max(0.00, Math.round((currentVal - 0.50) * 100) / 100);
+            boxInput.value = currentVal.toFixed(2);
+            costParams.boxCostPrice = currentVal;
+            const modalInput = document.getElementById('modal-input-box-cost');
+            if (modalInput) modalInput.value = currentVal.toFixed(2);
+            calculate();
+          }
+        });
+      }
+    };
+  </script>
+</body>
+</html>
